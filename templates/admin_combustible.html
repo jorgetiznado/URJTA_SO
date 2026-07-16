@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combustible — Admin URJTA</title>
+  <meta name="theme-color" content="#e5231d">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#e5231d;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1.1rem;flex:1}
+    .container{max-width:900px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
+    .stat .num{font-size:2rem;font-weight:bold;color:#e5231d}
+    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
+    .btn-dl{padding:10px 18px;border-radius:6px;text-decoration:none;font-size:.88rem;font-weight:bold;display:inline-block;background:#e5231d;color:#fff}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{background:#e5231d;color:#fff;padding:9px 8px;text-align:left}
+    td{padding:8px;border-bottom:1px solid #eee}
+    .empty{text-align:center;padding:20px;color:#bbb;font-size:.9rem}
+    .scroll{overflow-x:auto}
+  </style>
+</head>
+<body>
+<header>
+  <a href="/admin">←</a>
+  <h1>⛽ Combustible</h1>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>📊 Resumen</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="num">{{ stats.total_combustible }}</div>
+        <div class="lbl">Cargas registradas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⬇ Descargar datos</h2>
+    <a href="/descargar/combustible" class="btn-dl">⛽ Combustible</a>
+  </div>
+
+  <div class="card">
+    <h2>🕐 Últimas cargas</h2>
+    {% if ultimos_comb %}
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Operador</th><th>Patente</th><th>Km</th><th>Litros</th><th>N° Factura</th></tr>
+        </thead>
+        <tbody>
+          {% for r in ultimos_comb %}
+          <tr>
+            <td>{{ r.FECHA_REGISTRO }}</td>
+            <td>{{ r.OPERADOR }}</td>
+            <td>{{ r.PATENTE }}</td>
+            <td>{{ r.KM }}</td>
+            <td>{{ r.LITROS }}</td>
+            <td>{{ r.NUM_FACTURA }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">Sin registros de combustible aún.</p>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

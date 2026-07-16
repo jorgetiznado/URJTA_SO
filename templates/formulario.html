@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>URJTA — Registro de terreno</title>
+</head>
+<body>
+    <h1>Registro fotográfico</h1>
+    <form action="/enviar" method="POST" enctype="multipart/form-data">
+        <label>Nombre:</label><br>
+        <input type="text" name="nombre" required><br><br>
+
+        <label>Descripción:</label><br>
+        <textarea name="descripcion" rows="4" required></textarea><br><br>
+
+        <label>Fotografía:</label><br>
+        <input type="file" name="foto" accept="image/*" required><br><br>
+
+        <button type="submit">Enviar</button>
+    </form>
+</body>
+</html>

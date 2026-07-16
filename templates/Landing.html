@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión Cortes — URJTA</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#f7efe3">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Revisión Cortes">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f7efe3;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+    .logo{color:#fff;text-align:center;margin-bottom:40px}
+    .logo img{width:180px;max-width:60vw;display:block;margin:0 auto;filter:drop-shadow(0 2px 6px rgba(94,41,0,.15))}
+    .logo p{font-size:.9rem;color:#8a5a35;margin-top:14px;font-weight:bold}
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px}
+    .role-card{background:#fff;border-radius:12px;padding:28px 20px;text-align:center;text-decoration:none;color:#222;transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+    .role-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .role-card:active{transform:scale(.97)}
+    .role-card .icon{font-size:2.5rem;display:block;margin-bottom:10px}
+    .role-card h2{font-size:1rem;margin-bottom:4px}
+    .role-card p{font-size:.78rem;color:#888;line-height:1.4}
+    .role-card.campo{border-top:4px solid #27ae60}
+    .role-card.campo h2{color:#27ae60}
+    .role-card.materiales{border-top:4px solid #8e44ad}
+    .role-card.materiales h2{color:#8e44ad}
+    .role-card.combustible{border-top:4px solid #e5231d}
+    .role-card.combustible h2{color:#e5231d}
+    .role-card.geo{border-top:4px solid #0f69be}
+    .role-card.geo h2{color:#0f69be}
+    .role-card.cajachica{border-top:4px solid #0f8a7e}
+    .role-card.cajachica h2{color:#0f8a7e}
+    .role-card.admin{border-top:4px solid #e67e22;grid-column:1/-1}
+    .role-card.admin h2{color:#e67e22}
+    .version{color:#a9825e;font-size:.75rem;margin-top:32px;opacity:.8}
+    @media(max-width:400px){.cards{grid-template-columns:1fr}}
+    .session-bar{background:#fff;border-radius:20px;padding:9px 18px;font-size:.8rem;color:#5e2900;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:10px}
+    .session-bar a{color:#0f8a7e;text-decoration:none;font-weight:bold}
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="/static/logo-urjta.png" alt="URJTA">
+    <p>Sistema URJTA Web</p>
+  </div>
+
+  <div class="session-bar">
+    {% if usuario %}
+    <span>👤 {{ usuario.nombre }} — {{ usuario.cargo }}</span>
+    <a href="/logout">Cerrar sesión</a>
+    {% else %}
+    <a href="/login">🔑 Iniciar sesión</a>
+    {% endif %}
+  </div>
+
+  <div class="cards">
+    <a href="/campo" class="role-card campo">
+      <span class="icon">📋</span>
+      <h2>Revisión Cortes</h2>
+      <p>Ver clientes y registrar resultados</p>
+    </a>
+    <a href="/materiales" class="role-card materiales">
+      <span class="icon">🔧</span>
+      <h2>Materiales</h2>
+      <p>Registrar uso de materiales en terreno</p>
+    </a>
+    <a href="/combustible" class="role-card combustible">
+      <span class="icon">⛽</span>
+      <h2>Combustible</h2>
+      <p>Registrar cargas de combustible</p>
+    </a>
+    <a href="/geo" class="role-card geo">
+      <span class="icon">🗺️</span>
+      <h2>Buscar Geo</h2>
+      <p>Coordenadas UTM y GPS por N° de servicio</p>
+    </a>
+    {% if not usuario or usuario.cargo == 'ADMINISTRADOR DE CONTRATO' or usuario.cargo in ['DIRECCION', 'GERENCIA'] %}
+    <a href="/caja-chica" class="role-card cajachica">
+      <span class="icon">💵</span>
+      <h2>Caja Chica</h2>
+      <p>Solicitar y rendir compras con comprobante</p>
+    </a>
+    {% endif %}
+    <a href="/admin" class="role-card admin">
+      <span class="icon">⚙️</span>
+      <h2>Administración</h2>
+      <p>Cargar listas, revisar avance y descargar reportes</p>
+    </a>
+  </div>
+
+  <p class="version">v1.1 — URJTA Ingeniería &amp; Servicios</p>
+</body>
+</html>

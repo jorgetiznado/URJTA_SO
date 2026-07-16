@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URJTA — Gestión de Cortes</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#1a3a5c;color:#fff;padding:14px 20px}
+    header h1{font-size:1.2rem;letter-spacing:.5px}
+    .container{max-width:980px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.95rem;color:#1a3a5c;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+    .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    label{font-size:.8rem;color:#666;display:block;margin-bottom:4px}
+    select,input[type=file]{width:100%;padding:8px;border:1px solid #ccc;border-radius:5px;font-size:.88rem}
+    .btn{padding:8px 16px;border:none;border-radius:5px;cursor:pointer;font-size:.88rem;font-weight:bold}
+    .btn-primary{background:#1a3a5c;color:#fff}
+    .btn-reset{background:#e8e8e8;color:#444;text-decoration:none;padding:8px 14px;border-radius:5px;font-size:.88rem}
+    .btn-success{background:#27ae60;color:#fff}
+    .btn-action{background:#1a3a5c;color:#fff;padding:5px 12px;border-radius:4px;text-decoration:none;font-size:.8rem;border:none;cursor:pointer}
+    .filter-actions{display:flex;gap:8px;align-items:center;margin-top:12px}
+    .upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{background:#1a3a5c;color:#fff;padding:9px 8px;text-align:left;white-space:nowrap}
+    td{padding:8px;border-bottom:1px solid #eee;vertical-align:middle}
+    tr:hover{background:#f5f8fb}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:bold}
+    .badge-i{background:#fde8e8;color:#c0392b}
+    .badge-n{background:#e8f5e9;color:#1e8449}
+    .count{font-size:.82rem;color:#888;margin-bottom:10px}
+    .empty{text-align:center;padding:30px;color:#aaa;font-size:.9rem}
+    .scroll{overflow-x:auto}
+    @media(max-width:600px){th,td{font-size:.75rem;padding:6px 4px}}
+  </style>
+</head>
+<body>
+<header><h1>⚡ URJTA — Gestión de Cortes</h1></header>
+<div class="container">
+
+  <!-- Carga CSV -->
+  <div class="card">
+    <h2>📂 Cargar lista de clientes (CSV)</h2>
+    <form action="/subir-csv" method="POST" enctype="multipart/form-data">
+      <div class="upload-row">
+        <input type="file" name="csv" accept=".csv" required style="max-width:320px">
+        <button type="submit" class="btn btn-success">⬆ Cargar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card">
+    <h2>🔍 Filtros</h2>
+    <form method="GET" action="/">
+      <div class="filters">
+        <div>
+          <label>Operador</label>
+          <select name="operador">
+            <option value="">Todos</option>
+            {% for op in operadores %}
+            <option value="{{ op }}" {% if filtros.operador==op %}selected{% endif %}>{{ op }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Tipo de Corte</label>
+          <select name="tipo_corte">
+            <option value="">Todos</option>
+            {% for tc in tipos_corte %}
+            <option value="{{ tc }}" {% if filtros.tipo_corte==tc %}selected{% endif %}>{{ tc }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Periodo (YYYYMM)</label>
+          <select name="periodo">
+            <option value="">Todos</option>
+            {% for p in periodos %}
+            <option value="{{ p }}" {% if filtros.periodo==p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Tipo Deuda</label>
+          <select name="tipo_deuda">
+            <option value="">Todos</option>
+            <option value="INCOBRABLE" {% if filtros.tipo_deuda=='INCOBRABLE' %}selected{% endif %}>INCOBRABLE (≥ 6 meses)</option>
+            <option value="NORMAL"     {% if filtros.tipo_deuda=='NORMAL' %}selected{% endif %}>NORMAL</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="/" class="btn-reset">Limpiar</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lista -->
+  <div class="card">
+    <h2>📋 Clientes</h2>
+    <p class="count">{{ clientes|length }} registros</p>
+    {% if clientes %}
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ID Servicio</th>
+            <th>Dirección</th>
+            <th>Medidor</th>
+            <th>Fecha Corte</th>
+            <th>Deuda ($)</th>
+            <th>Antigüedad</th>
+            <th>Clasificación</th>
+            <th>Tipo Corte</th>
+            <th>Operador</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in clientes %}
+          <tr>
+            <td><strong>{{ c.ID_SERVICIO }}</strong></td>
+            <td>{{ c.DIRECCION }}</td>
+            <td>{{ c.MEDIDOR }}</td>
+            <td>{{ c.FECHA_CORTE }}</td>
+            <td>{{ "{:,.0f}".format(c.DEUDA|float) }}</td>
+            <td>{{ c.ANTIGUEDAD }} m</td>
+            <td>
+              <span class="badge {% if c.TIPO_DEUDA=='INCOBRABLE' %}badge-i{% else %}badge-n{% endif %}">
+                {{ c.TIPO_DEUDA }}
+              </span>
+            </td>
+            <td>{{ c['TIPO CORTE'] }}</td>
+            <td>{{ c.OPERADOR }}</td>
+            <td>
+              <a href="/cliente/{{ c.ID_SERVICIO }}" class="btn-action">Gestionar →</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">Sin datos. Carga un CSV o ajusta los filtros.</p>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

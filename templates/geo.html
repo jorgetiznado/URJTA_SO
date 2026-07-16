@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscar Geo — Revisión Cortes</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0f69be">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Revisión Cortes">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#0f69be;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .user-bar{background:#fff;padding:8px 16px;font-size:.78rem;color:#666;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+    .user-bar a{color:#e5231d;text-decoration:none;font-weight:bold}
+    .container{max-width:600px;margin:0 auto;padding:12px}
+    .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.9rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+    .search-bar{display:flex;gap:8px}
+    input[type=text]{flex:1;padding:12px 10px;border:1px solid #ccc;border-radius:8px;font-size:.95rem;font-family:Arial,sans-serif}
+    .btn{padding:12px 18px;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:bold;text-decoration:none;text-align:center;display:inline-block}
+    .btn-buscar{background:#0f69be;color:#fff}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .info-item label{font-size:.7rem;color:#999;display:block;text-transform:uppercase;margin-bottom:2px}
+    .info-item span{font-size:.95rem;font-weight:bold}
+    .map-wrap{border-radius:10px;overflow:hidden;border:1px solid #e0e0e0;margin-top:12px}
+    .map-wrap iframe{width:100%;height:280px;border:0;display:block}
+    .link-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+    .btn-maps{background:#5e2900;color:#fff}
+    .btn-waze{background:#33ccff;color:#fff}
+    .empty{text-align:center;padding:40px 20px;color:#aaa;font-size:.9rem;background:#fff;border-radius:10px}
+    .not-found{background:#fde8e8;color:#e5231d;padding:16px;border-radius:8px;text-align:center;font-size:.9rem}
+    .no-csv{background:#fff3e0;color:#b7770d;padding:16px;border-radius:8px;text-align:center;font-size:.9rem}
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>🗺️ Buscar Geo</h1>
+</header>
+{% if usuario %}
+<div class="user-bar">
+  <span>👤 {{ usuario.nombre }} — {{ usuario.cargo }}</span>
+  <a href="/logout">Cerrar sesión</a>
+</div>
+{% endif %}
+
+<div class="container">
+
+  <div class="card">
+    <h2>🔍 Buscar por N° de servicio</h2>
+    <form method="GET" action="/geo">
+      <div class="search-bar">
+        <input type="text" name="id_servicio" placeholder="Ej: 500755" value="{{ id_servicio }}" inputmode="numeric" autofocus>
+        <button type="submit" class="btn btn-buscar">Buscar</button>
+      </div>
+    </form>
+  </div>
+
+  {% if buscado %}
+    {% if resultado %}
+    <div class="card">
+      <h2>📍 Servicio {{ resultado.servicio }}</h2>
+      <div class="info-grid">
+        <div class="info-item" style="grid-column:1/-1">
+          <label>Cliente</label>
+          <span>{{ resultado.cliente or '—' }}</span>
+        </div>
+        <div class="info-item" style="grid-column:1/-1">
+          <label>Dirección</label>
+          <span>{{ resultado.direccion or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Localidad</label>
+          <span>{{ resultado.localidad or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Medidor</label>
+          <span>{{ resultado.medidor or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Diámetro</label>
+          <span>{{ resultado.diametro or '—' }}</span>
+        </div>
+        <div class="info-item">
+          <label>Marca</label>
+          <span>{{ resultado.marca or '—' }}</span>
+        </div>
+      </div>
+
+      {% if resultado.lat is not none and resultado.lon is not none %}
+      <div class="map-wrap">
+        <iframe
+          src="https://www.openstreetmap.org/export/embed.html?bbox={{ resultado.lon - 0.003 }}%2C{{ resultado.lat - 0.003 }}%2C{{ resultado.lon + 0.003 }}%2C{{ resultado.lat + 0.003 }}&layer=mapnik&marker={{ resultado.lat }}%2C{{ resultado.lon }}"
+          loading="lazy"></iframe>
+      </div>
+      <div class="link-actions">
+        <a class="btn btn-maps" target="_blank" rel="noopener"
+           href="https://www.google.com/maps?q={{ resultado.lat }},{{ resultado.lon }}">📌 Google Maps</a>
+        <a class="btn btn-waze" target="_blank" rel="noopener"
+           href="https://waze.com/ul?ll={{ resultado.lat }},{{ resultado.lon }}&navigate=yes">🚗 Waze</a>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="not-found">⚠️ No se encontró el servicio "{{ id_servicio }}" en el catastro geo.</div>
+    {% endif %}
+  {% else %}
+  <div class="empty">Ingresa un N° de servicio para ver sus coordenadas.</div>
+  {% endif %}
+
+</div>
+</body>
+</html>

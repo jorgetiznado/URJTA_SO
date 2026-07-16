@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cobranza — Admin URJTA</title>
+  <meta name="theme-color" content="#a67c00">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#a67c00;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1.1rem;flex:1}
+    .container{max-width:900px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
+    .stat .num{font-size:1.6rem;font-weight:bold;color:#a67c00}
+    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
+    .stat.good .num{color:#1e8449}
+    .stat.warn .num{color:#b7770d}
+    .btn-sync{display:inline-block;background:#a67c00;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:.9rem}
+    .btn-sync:active{background:#8a6800}
+    .pipeline-status{padding:12px 14px;border-radius:8px;font-size:.85rem;margin-bottom:14px}
+    .pipeline-ok{background:#e8f5e9;color:#1e8449}
+    .pipeline-warn{background:#fff3e0;color:#b7770d}
+    .placeholder{background:#f8f9fa;border:2px dashed #ddd;border-radius:8px;padding:20px;text-align:center;color:#999;font-size:.85rem}
+  </style>
+</head>
+<body>
+<header>
+  <a href="/admin">←</a>
+  <h1>📈 Cobranza</h1>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>💰 Estado de pago (clientes cargados)</h2>
+    <div class="stats-grid">
+      <div class="stat good">
+        <div class="num">{{ stats.total_pagado }}</div>
+        <div class="lbl">Pagados</div>
+      </div>
+      <div class="stat warn">
+        <div class="num">{{ stats.total_sin_pago }}</div>
+        <div class="lbl">Sin pago</div>
+      </div>
+      <div class="stat good">
+        <div class="num">${{ "{:,.0f}".format(stats.monto_pagado) }}</div>
+        <div class="lbl">Deuda pagada</div>
+      </div>
+      <div class="stat warn">
+        <div class="num">${{ "{:,.0f}".format(stats.monto_sin_pago) }}</div>
+        <div class="lbl">Deuda pendiente</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔄 Pipeline de datos (Urjta-Cobranza)</h2>
+    {% if pipeline_disponible %}
+    <div class="pipeline-status pipeline-ok">✅ seguimiento.parquet disponible — datos actualizados del contrato de corte y repo</div>
+    {% else %}
+    <div class="pipeline-status pipeline-warn">⚠️ No se encontró seguimiento.parquet — revisa que el pipeline haya corrido</div>
+    {% endif %}
+    <p style="font-size:.85rem;color:#666;margin-bottom:14px">Trae los cortes pendientes directo desde el pipeline canónico (reemplaza la carga manual de CSV), con respaldo automático antes de escribir.</p>
+    <a href="/admin/sincronizar-pipeline" class="btn-sync">🔄 Sincronizar desde pipeline</a>
+  </div>
+
+  <div class="card">
+    <h2>📊 Reportería completa</h2>
+    <div class="placeholder">
+      Los KPIs contractuales (SLA, Efectividad, EEPP, Improcedencias) viven en el dashboard de
+      Urjta-Cobranza — acá no se duplican. Falta definir el enlace directo una vez que ese dashboard
+      quede publicado.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

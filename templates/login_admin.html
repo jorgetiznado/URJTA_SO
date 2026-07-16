@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración — URJTA</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#5e2900;display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .card{background:#fff;border-radius:12px;padding:36px 28px;width:90%;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+    .logo{text-align:center;margin-bottom:24px}
+    .logo img{width:64px;display:block;margin:0 auto 10px}
+    .logo h2{color:#e67e22;font-size:1.2rem}
+    .logo p{color:#888;font-size:.8rem;margin-top:4px}
+    label{font-size:.82rem;color:#555;font-weight:bold;display:block;margin-bottom:6px}
+    input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:1rem;margin-bottom:16px}
+    input:focus{outline:none;border-color:#e67e22}
+    button{width:100%;padding:14px;background:#e67e22;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer}
+    button:active{background:#cf6d17}
+    .error{background:#fde8e8;color:#e5231d;padding:10px 12px;border-radius:6px;font-size:.82rem;margin-bottom:14px;text-align:center}
+    a{display:block;text-align:center;margin-top:16px;color:#888;font-size:.82rem;text-decoration:none}
+    a:hover{color:#e67e22}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <img src="/static/logo-mark.png" alt="URJTA">
+      <h2>Administración</h2>
+      <p>URJTA Ingeniería &amp; Servicios</p>
+    </div>
+    {% if error %}
+    <div class="error">❌ Contraseña incorrecta</div>
+    {% endif %}
+    <form method="POST" action="/admin/login">
+      <label>Contraseña</label>
+      <input type="password" name="clave" placeholder="••••••••" autofocus required>
+      <button type="submit">Ingresar →</button>
+    </form>
+    <a href="/">← Volver al inicio</a>
+  </div>
+</body>
+</html>

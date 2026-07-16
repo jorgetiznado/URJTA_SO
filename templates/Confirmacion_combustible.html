@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión Cortes</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .card{background:#fff;border-radius:12px;padding:40px 32px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12);max-width:380px;width:90%}
+    .icon{font-size:4rem;margin-bottom:16px}
+    h2{color:#e5231d;margin-bottom:12px;font-size:1.3rem}
+    .dato{background:#f8f9fa;border-radius:8px;padding:10px 14px;margin-bottom:8px;text-align:left}
+    .dato label{font-size:.72rem;color:#999;display:block;text-transform:uppercase}
+    .dato span{font-size:1rem;font-weight:bold;color:#222}
+    .actions{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+    a{display:block;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:bold;font-size:.95rem;text-align:center}
+    .btn-nuevo{background:#e5231d;color:#fff}
+    .btn-inicio{background:#e8f0f8;color:#5e2900}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h2>Carga registrada</h2>
+    <div class="dato">
+      <label>Operador</label>
+      <span>{{ operador }}</span>
+    </div>
+    <div class="dato">
+      <label>Patente</label>
+      <span>{{ patente }}</span>
+    </div>
+    <div class="dato">
+      <label>Km odómetro</label>
+      <span>{{ km }} km</span>
+    </div>
+    <div class="dato">
+      <label>Litros cargados</label>
+      <span>{{ litros }} L</span>
+    </div>
+    <div class="actions">
+      <a href="/combustible" class="btn-nuevo">⛽ Nueva carga</a>
+      <a href="/" class="btn-inicio">🏠 Inicio</a>
+    </div>
+  </div>
+</body>
+</html>

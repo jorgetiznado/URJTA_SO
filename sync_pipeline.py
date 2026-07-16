@@ -1,0 +1,82 @@
+"""
+sync_pipeline.py
+=================
+Ingesta desde el pipeline real de Urjta-Cobranza (C:\\BD\\SGC\\Salidas\\seguimiento.parquet)
+hacia el formato clientes.csv que usa la app de campo.
+
+Reemplaza la carga manual de CSV en Admin: en vez de que alguien suba un archivo a mano,
+esto lee directo la salida ya validada del pipeline canónico (seguimiento_nyr.py).
+
+Filtro de "pendientes" confirmado contra medidas.py::ordenes_pendientes():
+    TIPO_RESULTADO == 'PENDIENTE' AND TIPO_ACCION == 'CORTE', sobre PERIODO_ORDEN.
+
+Nota sobre operador: el pendiente trae RESPONSABLE (asignado en NyR/Qlik antes de
+llegar a terreno), no OPERADOR (que solo se llena al ejecutar el PDA). Los pendientes
+sin RESPONSABLE asignado son responsabilidad de back office (Danna Peralta / Rodrigo
+Bravo) — quedan en la lista con OPERADOR vacío, visibles solo para roles que ven todo.
+"""
+
+import pandas as pd
+
+PARQUET_PATH = r"C:\BD\SGC\Salidas\seguimiento.parquet"
+
+COLUMNAS_CLIENTES = [
+    'ID_SERVICIO', 'FECHA_CORTE', 'DEUDA', 'ANTIGUEDAD',
+    'TIPO CORTE', 'OPERADOR', 'DIRECCION', 'MEDIDOR', 'LOCALIDAD', 'PAGO',
+]
+
+
+def periodo_mas_reciente():
+    """Último PERIODO_ORDEN presente en el pipeline (para default del sync)."""
+    df = pd.read_parquet(PARQUET_PATH, columns=['PERIODO_ORDEN'])
+    return int(df['PERIODO_ORDEN'].dropna().max())
+
+
+def obtener_pendientes(periodo='actual'):
+    """Lee seguimiento.parquet y devuelve un DataFrame con el esquema de clientes.csv.
+
+    periodo: int tipo 202607 para filtrar por PERIODO_ORDEN (mes de generación);
+             'actual' (default) usa el período más reciente disponible;
+             None trae TODO el backlog pendiente histórico (miles de filas).
+    """
+    df = pd.read_parquet(PARQUET_PATH)
+
+    if periodo == 'actual':
+        periodo = int(df['PERIODO_ORDEN'].dropna().max())
+
+    mask = (df['TIPO_RESULTADO'] == 'PENDIENTE') & (df['TIPO_ACCION'] == 'CORTE')
+    if periodo is not None:
+        mask &= (df['PERIODO_ORDEN'] == periodo)
+    pend = df.loc[mask].copy()
+
+    salida = pd.DataFrame({
+        'ID_SERVICIO': pend['ID_SERVICIO'],
+        'FECHA_CORTE': pd.to_datetime(pend['FECHA_GENERACION'], errors='coerce').dt.strftime('%d/%m/%Y'),
+        'DEUDA':       pend['DEUDA'],
+        'ANTIGUEDAD':  pend['ANTIGUEDAD'],
+        'TIPO CORTE':  pend['TIPO_CORTE'],
+        'OPERADOR':    pend['RESPONSABLE'],
+        'DIRECCION':   pend['DIRECCION'],
+        'MEDIDOR':     pend['MEDIDOR'],
+        'LOCALIDAD':   pend['LOCALIDAD_C'],
+        'PAGO':        pend['PAGO_FLAG'].fillna(0).astype(int),
+    })
+
+    # Un mismo servicio puede tener más de una orden pendiente entre distintos
+    # períodos; nos quedamos con la más reciente por FECHA_CORTE (generación).
+    salida = salida.sort_values('FECHA_CORTE').drop_duplicates('ID_SERVICIO', keep='last')
+
+    return salida.reset_index(drop=True)
+
+
+if __name__ == '__main__':
+    import sys
+    if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
+
+    df = obtener_pendientes(periodo=202607)
+    print(f"Pendientes período 202607: {len(df)} filas")
+    print(f"Con OPERADOR asignado (RESPONSABLE): {df['OPERADOR'].notna().sum()}")
+    print(f"Sin asignar (back office): {df['OPERADOR'].isna().sum()}")
+    print()
+    print(df.head(10).to_string())

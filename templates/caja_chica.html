@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caja Chica — Revisión Cortes</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0f8a7e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Revisión Cortes">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#0f8a7e;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .container{max-width:640px;margin:0 auto;padding:12px}
+    .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.9rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+    .form-group{margin-bottom:14px}
+    .form-group label{font-size:.82rem;color:#555;font-weight:bold;display:block;margin-bottom:6px}
+    input[type=text],input[type=number],select,textarea{width:100%;padding:12px 10px;border:1px solid #ccc;border-radius:8px;font-size:.95rem;-webkit-appearance:none;background:#fff;font-family:Arial,sans-serif}
+    textarea{resize:vertical;min-height:70px}
+    .btn-submit{width:100%;padding:14px;background:#0f8a7e;color:#fff;font-size:1rem;font-weight:bold;border:none;border-radius:10px;cursor:pointer}
+    .btn-submit:active{background:#0c6d63}
+
+    .sol-card{background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden;border-left:4px solid #999}
+    .sol-card.PENDIENTE{border-left-color:#e67e22}
+    .sol-card.APROBADA{border-left-color:#0f69be}
+    .sol-card.RECHAZADA{border-left-color:#e5231d}
+    .sol-card.RENDIDA{border-left-color:#27ae60}
+    .sol-header{padding:12px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+    .sol-id{font-size:.78rem;color:#999}
+    .sol-cat{font-size:.95rem;font-weight:bold;color:#333;margin-top:2px}
+    .sol-desc{font-size:.82rem;color:#555;margin-top:3px}
+    .sol-monto{font-size:1rem;font-weight:bold;color:#5e2900;white-space:nowrap}
+    .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.7rem;font-weight:bold;white-space:nowrap}
+    .badge-PENDIENTE{background:#fff3e0;color:#b7770d}
+    .badge-APROBADA{background:#eaf3fb;color:#0f69be}
+    .badge-RECHAZADA{background:#fde8e8;color:#e5231d}
+    .badge-RENDIDA{background:#e8f5e9;color:#1e8449}
+    .sol-footer{padding:0 14px 12px}
+    .sol-comentario{font-size:.78rem;color:#e5231d;background:#fde8e8;padding:8px 10px;border-radius:6px;margin-top:4px}
+    .sol-rendido{font-size:.78rem;color:#1e8449;background:#e8f5e9;padding:8px 10px;border-radius:6px;margin-top:4px}
+    .btn-rendir{display:block;text-align:center;background:#0f69be;color:#fff;padding:10px;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:bold;margin-top:8px}
+    .empty{text-align:center;padding:30px 20px;color:#aaa;font-size:.9rem;background:#fff;border-radius:10px}
+    .user-bar{background:#fff;padding:8px 16px;font-size:.78rem;color:#666;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+    .user-bar a{color:#e5231d;text-decoration:none;font-weight:bold}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>💵 Caja Chica</h1>
+</header>
+{% if usuario %}
+<div class="user-bar">
+  <span>👤 {{ usuario.nombre }} — {{ usuario.cargo }}</span>
+  <a href="/logout">Cerrar sesión</a>
+</div>
+{% endif %}
+
+<div class="container">
+
+  <div class="card">
+    <h2>📝 Nueva solicitud de compra</h2>
+    <form action="/caja-chica/solicitar" method="POST">
+      <div class="form-group">
+        <label>Categoría <span style="color:#e74c3c">*</span></label>
+        <select name="categoria" required>
+          <option value="">— Seleccionar —</option>
+          {% for cat in categorias %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Descripción — qué se necesita y para qué <span style="color:#e74c3c">*</span></label>
+        <textarea name="descripcion" placeholder="Ej: 2 litros de aceite para camioneta patente ABCD12" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Monto estimado (CLP) <span style="color:#e74c3c">*</span></label>
+        <input type="number" name="monto_solicitado" placeholder="0" min="1" step="1" required>
+      </div>
+      <button type="submit" class="btn-submit">Enviar solicitud</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>📋 Solicitudes</h2>
+    {% if solicitudes %}
+      {% for s in solicitudes %}
+      <div class="sol-card {{ s.ESTADO }}">
+        <div class="sol-header">
+          <div>
+            <div class="sol-id">N° {{ s.ID }} — {{ s.FECHA_SOLICITUD }}{% if usuario and usuario.cargo in ['DIRECCION','GERENCIA'] %} — {{ s.SOLICITANTE }}{% endif %}</div>
+            <div class="sol-cat">{{ s.CATEGORIA }}</div>
+            <div class="sol-desc">{{ s.DESCRIPCION }}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="sol-monto">${{ "{:,.0f}".format(s.MONTO_SOLICITADO|float) }}</div>
+            <span class="badge badge-{{ s.ESTADO }}">{{ s.ESTADO }}</span>
+          </div>
+        </div>
+        <div class="sol-footer">
+          {% if s.ESTADO == 'RECHAZADA' and s.COMENTARIO_APROBACION %}
+          <div class="sol-comentario">✋ {{ s.COMENTARIO_APROBACION }}</div>
+          {% endif %}
+          {% if s.ESTADO == 'APROBADA' %}
+          <a href="/caja-chica/rendir/{{ s.ID }}" class="btn-rendir">🧾 Rendir gasto →</a>
+          {% endif %}
+          {% if s.ESTADO == 'RENDIDA' %}
+          <div class="sol-rendido">✅ Rendido: {{ s.TIPO_DOCUMENTO }} {{ s.NUM_DOCUMENTO }} — ${{ "{:,.0f}".format(s.MONTO_TOTAL|float) }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty">Aún no hay solicitudes registradas.</div>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

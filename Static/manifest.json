@@ -1,0 +1,22 @@
+{
+  "name": "Revisión Cortes",
+  "short_name": "Rev. Cortes",
+  "description": "URJTA — Gestión de cortes en terreno",
+  "start_url": "/campo",
+  "display": "standalone",
+  "background_color": "#5e2900",
+  "theme_color": "#5e2900",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

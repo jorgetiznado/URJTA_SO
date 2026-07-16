@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sincronizar pipeline — URJTA</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#e67e22;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1.1rem;flex:1}
+    .container{max-width:800px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
+    .stat .num{font-size:2rem;font-weight:bold;color:#5e2900}
+    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
+    .stat.warn .num{color:#b7770d}
+    table{width:100%;border-collapse:collapse;font-size:.8rem}
+    th{background:#5e2900;color:#fff;padding:8px;text-align:left}
+    td{padding:7px 8px;border-bottom:1px solid #eee}
+    .scroll{overflow-x:auto}
+    .error{background:#fde8e8;color:#e5231d;padding:14px 16px;border-radius:8px;margin-bottom:14px}
+    .aviso{background:#fff3e0;color:#b7770d;padding:12px 14px;border-radius:8px;font-size:.85rem;margin-bottom:14px}
+    .btn-confirmar{width:100%;padding:16px;background:#27ae60;color:#fff;font-size:1rem;font-weight:bold;border:none;border-radius:8px;cursor:pointer}
+    .btn-confirmar:active{background:#1e8449}
+    .btn-cancelar{display:block;text-align:center;padding:12px;color:#888;text-decoration:none;font-size:.88rem;margin-top:10px}
+    .sin-op{color:#b7770d}
+  </style>
+</head>
+<body>
+<header>
+  <a href="/admin">←</a>
+  <h1>🔄 Sincronizar desde pipeline</h1>
+</header>
+
+<div class="container">
+
+  {% if error %}
+  <div class="error">⚠️ {{ error }}</div>
+  {% else %}
+
+  <div class="card">
+    <h2>📊 Resumen — período {{ periodo }}</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="num">{{ total }}</div>
+        <div class="lbl">Cortes pendientes</div>
+      </div>
+      <div class="stat warn">
+        <div class="num">{{ sin_operador }}</div>
+        <div class="lbl">Sin operador asignado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="aviso">
+    ⚠️ Esto <strong>reemplaza por completo</strong> <code>clientes.csv</code>. Se guarda un respaldo
+    automático con fecha y hora antes de escribir el nuevo archivo. Los "sin operador asignado" son
+    responsabilidad de back office (Danna Peralta / Rodrigo Bravo) — quedan visibles solo para roles
+    que ven todo.
+  </div>
+
+  <div class="card">
+    <h2>👀 Vista previa (primeras 15 filas)</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Dirección</th><th>Deuda</th><th>Antig.</th><th>Operador</th><th>Localidad</th></tr>
+        </thead>
+        <tbody>
+          {% for c in muestra %}
+          <tr>
+            <td>{{ c.ID_SERVICIO }}</td>
+            <td>{{ c.DIRECCION }}</td>
+            <td>${{ "{:,.0f}".format(c.DEUDA|float) if c.DEUDA else '—' }}</td>
+            <td>{{ c.ANTIGUEDAD }}</td>
+            <td>{% if c.OPERADOR %}{{ c.OPERADOR }}{% else %}<span class="sin-op">sin asignar</span>{% endif %}</td>
+            <td>{{ c.LOCALIDAD }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form action="/admin/sincronizar-pipeline/confirmar" method="POST"
+        onsubmit="return confirm('¿Reemplazar clientes.csv con estos {{ total }} pendientes del pipeline? Se hace respaldo automático del archivo actual.')">
+    <button type="submit" class="btn-confirmar">✅ Confirmar y reemplazar clientes.csv</button>
+  </form>
+  <a href="/admin" class="btn-cancelar">Cancelar, volver a Admin</a>
+
+  {% endif %}
+</div>
+</body>
+</html>

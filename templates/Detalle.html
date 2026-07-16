@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión Cortes</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#5e2900">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Revisión Cortes">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;padding-bottom:100px}
+    header{background:#5e2900;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    header a{color:#fff;font-size:1.4rem;text-decoration:none;padding:4px 8px;margin:-4px -8px}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .user-bar{background:#fff;padding:8px 16px;font-size:.78rem;color:#666;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+    .user-bar a{color:#e5231d;text-decoration:none;font-weight:bold}
+    .container{max-width:600px;margin:0 auto;padding:12px}
+    .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.9rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .info-item label{font-size:.7rem;color:#999;display:block;text-transform:uppercase;margin-bottom:2px}
+    .info-item span{font-size:.95rem;font-weight:bold}
+    .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:bold}
+    .badge-i{background:#fde8e8;color:#e5231d}
+    .badge-n{background:#e8f5e9;color:#1e8449}
+    .gps-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f0f8f0;border-radius:8px;border:1px solid #d4edda}
+    .gps-btn{background:#27ae60;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:.85rem;font-weight:bold;cursor:pointer;white-space:nowrap;min-height:40px}
+    .gps-btn:active{background:#1e8449}
+    #gps-status{font-size:.8rem;color:#555;flex:1}
+    .hidden{display:none!important}
+    .result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .rbtn{padding:16px 8px;border:2px solid #e0e0e0;border-radius:10px;text-align:center;cursor:pointer;background:#fff;font-size:.82rem;font-weight:bold;transition:.15s;-webkit-tap-highlight-color:transparent;min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+    .rbtn:active{transform:scale(.97)}
+    .rbtn.sel{border-color:#5e2900;background:#5e2900;color:#fff}
+    .rbtn .icon{font-size:1.6rem}
+    .accion-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+    .abtn{padding:14px 8px;border:2px solid #e0e0e0;border-radius:10px;text-align:center;cursor:pointer;background:#fff;font-size:.85rem;font-weight:bold;transition:.15s;-webkit-tap-highlight-color:transparent;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+    .abtn:active{transform:scale(.97)}
+    .abtn.sel{border-color:#e67e22;background:#e67e22;color:#fff}
+    .abtn .icon{font-size:1.3rem}
+    .form-group{margin-top:14px}
+    .form-group > label{font-size:.82rem;color:#555;font-weight:bold;display:block;margin-bottom:6px}
+    select{width:100%;padding:12px 10px;border:1px solid #ccc;border-radius:8px;font-size:.95rem;-webkit-appearance:none;background:#fff;min-height:46px}
+    .foto-wrap{margin-top:14px}
+    .foto-wrap > label{font-size:.82rem;color:#555;font-weight:bold;display:block;margin-bottom:8px}
+    textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:.95rem;resize:vertical;font-family:Arial,sans-serif;min-height:90px}
+    .submit-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;padding:12px 16px;box-shadow:0 -2px 8px rgba(0,0,0,.1);z-index:10}
+    .btn-submit{width:100%;padding:16px;background:#27ae60;color:#fff;font-size:1rem;font-weight:bold;border:none;border-radius:10px;cursor:pointer;letter-spacing:.3px}
+    .btn-submit:active{background:#1e8449}
+    .btn-submit:disabled{background:#95d5a8;cursor:not-allowed}
+    .foto-slots{display:flex;flex-direction:column;gap:10px}
+    .foto-slot{border-radius:10px;overflow:hidden;border:1px solid #e0e0e0;background:#fafafa}
+    .foto-slot-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f5f5f5;font-size:.8rem;color:#666;font-weight:bold}
+    .foto-slot-header .req{color:#e74c3c;font-size:.72rem}
+    .foto-slot-body{padding:10px}
+    .foto-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .foto-btn-cam{background:#5e2900;color:#fff;border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-weight:bold;font-size:.85rem;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .foto-btn-gal{background:#f0f4f8;color:#5e2900;border:2px solid #5e2900;border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-weight:bold;font-size:.85rem;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .foto-preview-sm{max-width:100%;border-radius:6px;margin-top:8px;display:none}
+    .btn-add-foto{width:100%;padding:11px;background:#f0f4f8;color:#5e2900;border:2px dashed #5e2900;border-radius:8px;font-size:.9rem;font-weight:bold;cursor:pointer;margin-top:8px}
+    .btn-add-foto:disabled{opacity:.4;cursor:not-allowed}
+    .foto-count{font-size:.78rem;color:#888;text-align:right;margin-top:4px}
+    /* Overlay carga */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;flex-direction:column;align-items:center;justify-content:center}
+    .overlay.visible{display:flex}
+    .overlay-box{background:#fff;border-radius:14px;padding:30px 32px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:240px}
+    .spinner{font-size:2.8rem;display:block;margin-bottom:12px;animation:spin 1s linear infinite}
+    .overlay-msg{font-size:1rem;color:#5e2900;font-weight:bold;margin-bottom:6px}
+    .overlay-sub{font-size:.8rem;color:#888}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/{{ origen }}">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>Servicio {{ cliente.ID_SERVICIO }}</h1>
+</header>
+{% if usuario %}
+<div class="user-bar">
+  <span>👤 {{ usuario.nombre }} — {{ usuario.cargo }}</span>
+  <a href="/logout">Cerrar sesión</a>
+</div>
+{% endif %}
+
+<div class="container">
+
+  <div class="card">
+    <h2>📋 Datos del cliente</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <label>ID Servicio</label>
+        <span>{{ cliente.ID_SERVICIO }}</span>
+      </div>
+      <div class="info-item">
+        <label>Medidor</label>
+        <span>{{ cliente.MEDIDOR }}</span>
+      </div>
+      <div class="info-item" style="grid-column:1/-1">
+        <label>Dirección</label>
+        <span>{{ cliente.DIRECCION }}</span>
+      </div>
+      <div class="info-item">
+        <label>Localidad</label>
+        <span>{{ cliente.LOCALIDAD }}</span>
+      </div>
+      <div class="info-item">
+        <label>Tipo de Corte</label>
+        <span>{{ cliente['TIPO CORTE'] }}</span>
+      </div>
+      <div class="info-item">
+        <label>Deuda</label>
+        <span>${{ "{:,.0f}".format(cliente.DEUDA|float) }}</span>
+      </div>
+      <div class="info-item">
+        <label>Antigüedad</label>
+        <span>
+          {{ cliente.ANTIGUEDAD }}m —
+          <span class="badge {% if cliente.TIPO_DEUDA=='INCOBRABLE' %}badge-i{% else %}badge-n{% endif %}">
+            {{ cliente.TIPO_DEUDA }}
+          </span>
+        </span>
+      </div>
+      <div class="info-item">
+        <label>Operador</label>
+        <span>{{ cliente.OPERADOR }}</span>
+      </div>
+    </div>
+  </div>
+
+  <form action="/registrar" method="POST" enctype="multipart/form-data" id="frm">
+    <input type="hidden" name="id_servicio" value="{{ cliente.ID_SERVICIO }}">
+    <input type="hidden" name="resultado"   id="val_resultado">
+    <input type="hidden" name="accion"      id="val_accion">
+    <input type="hidden" name="origen"      value="{{ origen }}">
+    <input type="hidden" name="latitud"     id="lat">
+    <input type="hidden" name="longitud"    id="lng">
+    <input type="hidden" name="foto_origen" id="foto_origen">
+
+    <div class="card">
+      <h2>👤 Operador que gestiona</h2>
+      <div class="form-group" style="margin-top:0">
+        <label>Operador <span style="color:#e74c3c">*</span></label>
+        {% if usuario and usuario.cargo == 'OPERADOR' %}
+        <input type="text" value="{{ usuario.nombre }}" disabled style="background:#f5f5f5">
+        <input type="hidden" name="operador_registro" id="sel_operador" value="{{ usuario.valor }}">
+        {% else %}
+        <select name="operador_registro" id="sel_operador" required>
+          <option value="">— Seleccionar —</option>
+          {% for op in operadores %}
+          <option value="{{ op.CODIGO }} - {{ op.NOMBRE }}">{{ op.CODIGO }} — {{ op.NOMBRE }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📍 Ubicación GPS</h2>
+      <div class="gps-bar">
+        <button type="button" class="gps-btn" onclick="capturarGPS()">📡 Capturar</button>
+        <span id="gps-status">Toca para obtener coordenadas</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>✅ Resultado de la visita</h2>
+      <div class="result-grid">
+        <div class="rbtn" onclick="elegirResultado('CORTADO', this)">
+          <span class="icon">✂️</span>CORTADO
+        </div>
+        <div class="rbtn" onclick="elegirResultado('AUTOREPUESTO', this)">
+          <span class="icon">🔧</span>AUTO REPUESTO
+        </div>
+        <div class="rbtn" onclick="elegirResultado('OTRO', this)">
+          <span class="icon">📝</span>OTRO
+        </div>
+      </div>
+    </div>
+
+    <!-- CORTADO -->
+    <div class="card hidden" id="sec-cortado">
+      <h2>📷 Fotografía del corte</h2>
+      <div class="foto-wrap">
+        <label>Fotos con sello de fecha y hora <span style="color:#e74c3c">*</span></label>
+        <div class="foto-slots" id="slots-cortado"></div>
+        <button type="button" class="btn-add-foto" id="add-cortado" onclick="agregarSlot('cortado')">➕ Agregar otra foto</button>
+        <p class="foto-count" id="count-cortado">1 / 4</p>
+      </div>
+    </div>
+
+    <!-- AUTOREPUESTO -->
+    <div class="card hidden" id="sec-auto">
+      <h2>⚡ Acción a realizar</h2>
+      <div class="accion-grid">
+        <div class="abtn" onclick="elegirAccion('CORTE', this)">
+          <span class="icon">✂️</span>CORTE
+        </div>
+        <div class="abtn" onclick="elegirAccion('IMPROCEDENCIA', this)">
+          <span class="icon">🚫</span>IMPROCEDENCIA
+        </div>
+      </div>
+      <div class="form-group hidden" id="sub-corte">
+        <label>Tipo de corte</label>
+        <select name="tipo_corte_sel">
+          <option value="">— Seleccionar —</option>
+          {% for tc in tipos_corte %}
+          <option value="{{ tc }}">{{ tc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group hidden" id="sub-improcedencia">
+        <label>Motivo de improcedencia</label>
+        <select name="improcedencia_sel">
+          <option value="">— Seleccionar —</option>
+          {% for imp in improcedencias %}
+          <option value="{{ imp }}">{{ imp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="foto-wrap" style="margin-top:16px">
+        <label>Fotos evidencia <span style="color:#e74c3c">*</span></label>
+        <div class="foto-slots" id="slots-auto"></div>
+        <button type="button" class="btn-add-foto" id="add-auto" onclick="agregarSlot('auto')">➕ Agregar otra foto</button>
+        <p class="foto-count" id="count-auto">1 / 4</p>
+      </div>
+    </div>
+
+    <!-- OTRO -->
+    <div class="card hidden" id="sec-otro">
+      <h2>📝 Detalle</h2>
+      <div class="foto-wrap">
+        <label>Fotos <span style="color:#e74c3c">*</span></label>
+        <div class="foto-slots" id="slots-otro"></div>
+        <button type="button" class="btn-add-foto" id="add-otro" onclick="agregarSlot('otro')">➕ Agregar otra foto</button>
+        <p class="foto-count" id="count-otro">1 / 4</p>
+      </div>
+    </div>
+
+    <!-- OBSERVACIÓN -->
+    <div class="card hidden" id="sec-observacion">
+      <h2>💬 Observación</h2>
+      <textarea name="observacion" placeholder="Detalle relevante de la visita..."></textarea>
+    </div>
+
+  </form>
+</div>
+
+<!-- Submit fijo -->
+<div class="submit-bar hidden" id="submit-bar">
+  <button type="submit" class="btn-submit" id="btn-submit-main" form="frm">💾 Guardar registro</button>
+</div>
+
+<!-- Overlay carga -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <span class="spinner">⏳</span>
+    <p class="overlay-msg" id="overlay-msg">Preparando...</p>
+    <p class="overlay-sub">No cierres esta pantalla</p>
+  </div>
+</div>
+
+<script>
+  const MAX_FOTOS = 4;
+  const slotsCount = { cortado: 1, auto: 1, otro: 1 };
+
+  // ── Slots de foto ────────────────────────────────────────────────────────────
+  function crearSlot(seccion, index) {
+    const div = document.createElement('div');
+    div.className = 'foto-slot';
+    div.id = `slot-${seccion}-${index}`;
+    div.innerHTML = `
+      <div class="foto-slot-header">
+        <span>Foto ${index} ${index===1 ? '<span class="req">obligatoria</span>' : ''}</span>
+      </div>
+      <div class="foto-slot-body">
+        <div class="foto-btns">
+          <label class="foto-btn-cam">
+            📸 Cámara
+            <input type="file" name="foto" accept="image/*" capture="environment"
+                   style="display:none" onchange="previewSlot(this,'prev-${seccion}-${index}');setOrigen('CAMARA')">
+          </label>
+          <label class="foto-btn-gal">
+            🖼️ Galería
+            <input type="file" name="foto" accept="image/*"
+                   style="display:none" onchange="previewSlot(this,'prev-${seccion}-${index}');setOrigen('GALERIA')">
+          </label>
+        </div>
+        <img id="prev-${seccion}-${index}" class="foto-preview-sm">
+      </div>`;
+    return div;
+  }
+
+  function initSlots(seccion) {
+    const c = document.getElementById(`slots-${seccion}`);
+    c.innerHTML = '';
+    c.appendChild(crearSlot(seccion, 1));
+    slotsCount[seccion] = 1;
+    actualizarBoton(seccion);
+  }
+
+  function agregarSlot(seccion) {
+    if (slotsCount[seccion] >= MAX_FOTOS) return;
+    slotsCount[seccion]++;
+    document.getElementById(`slots-${seccion}`).appendChild(crearSlot(seccion, slotsCount[seccion]));
+    actualizarBoton(seccion);
+  }
+
+  function actualizarBoton(seccion) {
+    const n = slotsCount[seccion];
+    document.getElementById(`add-${seccion}`).disabled = (n >= MAX_FOTOS);
+    document.getElementById(`count-${seccion}`).textContent = `${n} / ${MAX_FOTOS}`;
+  }
+
+  function previewSlot(input, previewId) {
+    const prev = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block'; };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function setOrigen(val) {
+    document.getElementById('foto_origen').value = val;
+  }
+
+  // ── GPS ──────────────────────────────────────────────────────────────────────
+  function capturarGPS() {
+    const status = document.getElementById('gps-status');
+    status.textContent = '⏳ Obteniendo ubicación...';
+    if (!navigator.geolocation) { status.textContent = '⚠️ GPS no disponible'; return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        document.getElementById('lat').value = lat;
+        document.getElementById('lng').value = lng;
+        status.innerHTML = `✅ <strong>${lat}, ${lng}</strong> (±${Math.round(pos.coords.accuracy)}m)`;
+        status.style.color = '#27ae60';
+      },
+      () => { status.textContent = '⚠️ No se pudo obtener GPS.'; status.style.color = '#e74c3c'; },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+  window.addEventListener('load', () => setTimeout(capturarGPS, 800));
+
+  // ── Resultado / Acción ───────────────────────────────────────────────────────
+  function elegirResultado(val, el) {
+    document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('val_resultado').value = val;
+    ['sec-cortado','sec-auto','sec-otro'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    if (val === 'CORTADO')      { document.getElementById('sec-cortado').classList.remove('hidden'); initSlots('cortado'); }
+    if (val === 'AUTOREPUESTO') { document.getElementById('sec-auto').classList.remove('hidden');    initSlots('auto'); }
+    if (val === 'OTRO')         { document.getElementById('sec-otro').classList.remove('hidden');    initSlots('otro'); }
+    document.getElementById('sec-observacion').classList.remove('hidden');
+    document.getElementById('submit-bar').classList.remove('hidden');
+  }
+
+  function elegirAccion(val, el) {
+    document.querySelectorAll('.abtn').forEach(b => b.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('val_accion').value = val;
+    document.getElementById('sub-corte').classList.add('hidden');
+    document.getElementById('sub-improcedencia').classList.add('hidden');
+    if (val === 'CORTE')        document.getElementById('sub-corte').classList.remove('hidden');
+    if (val === 'IMPROCEDENCIA') document.getElementById('sub-improcedencia').classList.remove('hidden');
+  }
+
+  // ── Compresión ───────────────────────────────────────────────────────────────
+  function comprimirImagen(file, maxPx=1280, quality=0.72) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if (w > maxPx || h > maxPx) {
+            if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+            else       { w = Math.round(w * maxPx / h); h = maxPx; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(resolve, 'image/jpeg', quality);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Envío ────────────────────────────────────────────────────────────────────
+  document.getElementById('frm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const operadorRegistro = document.getElementById('sel_operador').value;
+    if (!operadorRegistro) { alert('Debes seleccionar el operador que gestiona.'); return; }
+
+    const resultado = document.getElementById('val_resultado').value;
+    if (!resultado) { alert('Debes seleccionar un resultado.'); return; }
+
+    if (resultado === 'AUTOREPUESTO') {
+      const accion = document.getElementById('val_accion').value;
+      if (!accion) { alert('Debes seleccionar una acción: CORTE o IMPROCEDENCIA.'); return; }
+      if (accion === 'CORTE' && !document.querySelector('#sub-corte select').value) {
+        alert('Debes seleccionar el tipo de corte.'); return;
+      }
+      if (accion === 'IMPROCEDENCIA' && !document.querySelector('#sub-improcedencia select').value) {
+        alert('Debes seleccionar el motivo de improcedencia.'); return;
+      }
+    }
+
+    const seccionMap = { CORTADO: 'cortado', AUTOREPUESTO: 'auto', OTRO: 'otro' };
+    const seccion = seccionMap[resultado];
+    const inputsFoto = seccion ? Array.from(document.querySelectorAll(`#slots-${seccion} input[type=file]`)) : [];
+    const fotosSeleccionadas = inputsFoto.filter(f => f.files && f.files[0]);
+    if (seccion && fotosSeleccionadas.length === 0) {
+      alert('Debes adjuntar al menos una fotografía.'); return;
+    }
+
+    // Mostrar overlay
+    const btn = document.getElementById('btn-submit-main');
+    btn.disabled = true;
+    document.getElementById('overlay').classList.add('visible');
+
+    // Comprimir fotos
+    const fd = new FormData(this);
+    fd.delete('foto');
+    for (let i = 0; i < fotosSeleccionadas.length; i++) {
+      document.getElementById('overlay-msg').textContent = `Comprimiendo foto ${i+1} de ${fotosSeleccionadas.length}...`;
+      const blob = await comprimirImagen(fotosSeleccionadas[i].files[0]);
+      fd.append('foto', blob, `foto_${i+1}.jpg`);
+    }
+
+    document.getElementById('overlay-msg').textContent = 'Enviando al servidor...';
+
+    try {
+      const resp = await fetch('/registrar', { method: 'POST', body: fd });
+      const html = await resp.text();
+      document.open(); document.write(html); document.close();
+    } catch(err) {
+      document.getElementById('overlay').classList.remove('visible');
+      btn.disabled = false;
+      alert('Error al enviar. Verifica tu conexión.');
+    }
+  });
+</script>
+</body>
+</html>

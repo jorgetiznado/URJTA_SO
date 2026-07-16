@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URJTA — Administración</title>
+  <meta name="theme-color" content="#e67e22">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#e67e22;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1.1rem;flex:1}
+    .header-logo{height:32px;width:32px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .container{max-width:900px;margin:0 auto;padding:16px}
+    .upload-error{background:#fde8e8;color:#e5231d;padding:14px 16px;border-radius:8px;margin-bottom:14px;font-size:.88rem;font-weight:bold}
+
+    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
+    .stat .num{font-size:2rem;font-weight:bold;color:#5e2900}
+    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
+
+    .modules{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .mod-card{background:#fff;border-radius:12px;padding:24px 18px;text-align:center;text-decoration:none;color:#222;transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.1);position:relative}
+    .mod-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+    .mod-card:active{transform:scale(.97)}
+    .mod-card .icon{font-size:2.2rem;display:block;margin-bottom:8px}
+    .mod-card h3{font-size:.95rem;margin-bottom:4px}
+    .mod-card p{font-size:.75rem;color:#888;line-height:1.4}
+    .mod-badge{position:absolute;top:12px;right:12px;background:#e67e22;color:#fff;font-size:.7rem;font-weight:bold;padding:2px 8px;border-radius:10px}
+
+    .mod-card.clientes{border-top:4px solid #27ae60} .mod-card.clientes h3{color:#27ae60}
+    .mod-card.materiales{border-top:4px solid #8e44ad} .mod-card.materiales h3{color:#8e44ad}
+    .mod-card.combustible{border-top:4px solid #e5231d} .mod-card.combustible h3{color:#e5231d}
+    .mod-card.operadores{border-top:4px solid #0f69be} .mod-card.operadores h3{color:#0f69be}
+    .mod-card.cajachica{border-top:4px solid #0f8a7e} .mod-card.cajachica h3{color:#0f8a7e}
+    .mod-card.cobranza{border-top:4px solid #a67c00} .mod-card.cobranza h3{color:#a67c00}
+
+    @media(max-width:480px){.modules{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <a href="/">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>⚙️ Administración</h1>
+</header>
+
+<div class="container">
+
+  {% if error %}
+  <div class="upload-error">⚠️ {{ error }}</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>📊 Estado general</h2>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="num">{{ stats.total_clientes }}</div>
+        <div class="lbl">Clientes cargados</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ stats.total_gestionados }}</div>
+        <div class="lbl">Cortes registrados</div>
+      </div>
+      <div class="stat">
+        {% if stats.total_clientes > 0 %}
+        <div class="num">{{ ((stats.total_gestionados / stats.total_clientes) * 100)|int }}%</div>
+        {% else %}
+        <div class="num">—</div>
+        {% endif %}
+        <div class="lbl">Avance cortes</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ stats.cc_pendientes }}</div>
+        <div class="lbl">Caja chica x aprobar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modules">
+    <a href="/admin/clientes" class="mod-card clientes">
+      <span class="icon">📋</span>
+      <h3>Clientes y Cortes</h3>
+      <p>Cargar lista, ver resultados y descargar reportes</p>
+      {% if not stats.csv_cargado %}<span class="mod-badge">sin CSV</span>{% endif %}
+    </a>
+    <a href="/admin/materiales" class="mod-card materiales">
+      <span class="icon">🔧</span>
+      <h3>Materiales</h3>
+      <p>Catálogo y registros de uso en terreno</p>
+      {% if not stats.mat_cargado %}<span class="mod-badge">sin CSV</span>{% endif %}
+    </a>
+    <a href="/admin/combustible" class="mod-card combustible">
+      <span class="icon">⛽</span>
+      <h3>Combustible</h3>
+      <p>Cargas registradas y descarga de reportes</p>
+    </a>
+    <a href="/admin/operadores" class="mod-card operadores">
+      <span class="icon">👥</span>
+      <h3>Operadores</h3>
+      <p>Catálogo de operadores, cargos y roles</p>
+      {% if not stats.op_cargado %}<span class="mod-badge">sin CSV</span>{% endif %}
+    </a>
+    <a href="/admin/caja-chica" class="mod-card cajachica">
+      <span class="icon">💵</span>
+      <h3>Caja Chica</h3>
+      <p>Aprobar solicitudes y revisar rendiciones</p>
+      {% if stats.cc_pendientes > 0 %}<span class="mod-badge">{{ stats.cc_pendientes }} x aprobar</span>{% endif %}
+    </a>
+    <a href="/admin/cobranza" class="mod-card cobranza">
+      <span class="icon">📈</span>
+      <h3>Cobranza</h3>
+      <p>Reportería, pipeline de datos y estado de pago</p>
+    </a>
+  </div>
+
+</div>
+</body>
+</html>

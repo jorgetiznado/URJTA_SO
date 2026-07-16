@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión Cortes</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .card{background:#fff;border-radius:12px;padding:40px 32px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12);max-width:380px;width:90%}
+    .icon{font-size:4rem;margin-bottom:16px}
+    h2{color:#8e44ad;margin-bottom:8px;font-size:1.3rem}
+    p{color:#666;margin-bottom:8px;font-size:.95rem}
+    strong{color:#222}
+    .actions{margin-top:24px;display:flex;flex-direction:column;gap:10px}
+    a{display:block;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:bold;font-size:.95rem;text-align:center}
+    .btn-nuevo{background:#8e44ad;color:#fff}
+    .btn-inicio{background:#e8f0f8;color:#5e2900}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h2>Materiales registrados</h2>
+    <p>Servicio <strong>{{ id_servicio }}</strong></p>
+    <p>Acción: <strong>{{ tipo_accion }}</strong></p>
+    <p>Operador: <strong>{{ operador }}</strong></p>
+    <div class="actions">
+      <a href="/materiales" class="btn-nuevo">➕ Nuevo registro</a>
+      <a href="/" class="btn-inicio">🏠 Inicio</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Datos reales (CSV con datos de clientes, fotos de terreno) — solo viven en este PC
+data/
+fotos/
+
+# Secretos (contraseñas, PIN, clave de sesión) — nunca al repo
+.env
+
+# Binario de terceros (52MB, se descarga aparte, no es código fuente)
+cloudflared.exe
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Configuración local del asistente (no aporta fuera de esta máquina)
+.claude/
