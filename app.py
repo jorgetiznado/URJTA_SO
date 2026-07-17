@@ -206,6 +206,24 @@ def es_direccion(usuario):
     return bool(usuario) and usuario['cargo'] in CARGOS_DIRECCION
 
 
+def puede_aprobar_caja_chica():
+    """Clave única de admin (transición), o Dirección/Gerencia, o quien tenga
+    APRUEBA_CAJA_CHICA=SI en operadores.csv (ej. José, sin depender de su cargo)."""
+    if session.get('admin'):
+        return True
+    usuario = usuario_actual()
+    if not usuario:
+        return False
+    if es_direccion(usuario):
+        return True
+    df = read_csv_safe(OPERADORES_PATH)
+    if df is not None and 'APRUEBA_CAJA_CHICA' in df.columns:
+        fila = df[df['CODIGO'] == usuario['codigo']]
+        if not fila.empty and str(fila.iloc[0]['APRUEBA_CAJA_CHICA']).strip().upper() == 'SI':
+            return True
+    return False
+
+
 def login_requerido(vista):
     @wraps(vista)
     def envoltura(*args, **kwargs):
@@ -469,8 +487,10 @@ def admin_operadores_panel():
 
 @app.route('/admin/caja-chica')
 def admin_caja_chica_panel():
-    if _admin_requerido():
-        return redirect(url_for('admin'))
+    if not puede_aprobar_caja_chica():
+        if not session.get('user_codigo') and not session.get('admin'):
+            return redirect(url_for('login', next=request.path))
+        return render_template('sin_permiso.html'), 403
 
     df_cc = get_caja_chica()
     stats = {
@@ -852,6 +872,7 @@ def registrar_combustible():
     km         = request.form.get('km', '')
     num_factura = request.form.get('num_factura', '')
     litros     = request.form.get('litros', '')
+    monto_vale = request.form.get('monto_vale', '')
     observacion = request.form.get('observacion', '')
     fecha_reg  = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
 
@@ -876,6 +897,7 @@ def registrar_combustible():
         'KM':              km,
         'NUM_FACTURA':     num_factura,
         'LITROS':          litros,
+        'MONTO_VALE':      monto_vale,
         'FOTO_FACTURA':    nombres.get('foto_factura', ''),
         'FOTO_ODOMETRO':   nombres.get('foto_odometro', ''),
         'FOTO_VALE':       nombres.get('foto_vale', ''),
@@ -937,21 +959,21 @@ def caja_chica_solicitar():
 
 @app.route('/admin/caja-chica/aprobar/<id_sol>', methods=['POST'])
 def caja_chica_aprobar(id_sol):
-    if not session.get('admin'):
-        return redirect(url_for('admin'))
+    if not puede_aprobar_caja_chica():
+        return render_template('sin_permiso.html'), 403
     df = get_caja_chica()
     idx = df.index[df['ID'] == id_sol]
     if len(idx):
         df.loc[idx, 'ESTADO'] = 'APROBADA'
         df.loc[idx, 'FECHA_APROBACION'] = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         guardar_caja_chica(df)
-    return redirect(url_for('admin'))
+    return redirect(url_for('admin_caja_chica_panel'))
 
 
 @app.route('/admin/caja-chica/rechazar/<id_sol>', methods=['POST'])
 def caja_chica_rechazar(id_sol):
-    if not session.get('admin'):
-        return redirect(url_for('admin'))
+    if not puede_aprobar_caja_chica():
+        return render_template('sin_permiso.html'), 403
     df = get_caja_chica()
     idx = df.index[df['ID'] == id_sol]
     if len(idx):
@@ -959,7 +981,7 @@ def caja_chica_rechazar(id_sol):
         df.loc[idx, 'FECHA_APROBACION'] = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         df.loc[idx, 'COMENTARIO_APROBACION'] = request.form.get('comentario', '')
         guardar_caja_chica(df)
-    return redirect(url_for('admin'))
+    return redirect(url_for('admin_caja_chica_panel'))
 
 
 @app.route('/caja-chica/rendir/<id_sol>')
