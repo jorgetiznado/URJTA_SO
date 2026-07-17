@@ -817,7 +817,6 @@ def registrar_materiales():
 # ─── Buscar Geo ───────────────────────────────────────────────────────────────
 
 @app.route('/geo')
-@login_requerido
 def geo():
     id_servicio = request.args.get('id_servicio', '').strip()
     resultado   = None
