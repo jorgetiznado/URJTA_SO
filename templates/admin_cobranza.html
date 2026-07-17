@@ -26,6 +26,12 @@
     .pipeline-ok{background:#e8f5e9;color:#1e8449}
     .pipeline-warn{background:#fff3e0;color:#b7770d}
     .placeholder{background:#f8f9fa;border:2px dashed #ddd;border-radius:8px;padding:20px;text-align:center;color:#999;font-size:.85rem}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{background:#a67c00;color:#fff;padding:9px 8px;text-align:left}
+    td{padding:8px;border-bottom:1px solid #eee;font-variant-numeric:tabular-nums}
+    .neg{color:#c0392b}
+    .pos{color:#1e8449}
+    .lock{background:#f8f9fa;border-radius:8px;padding:20px;text-align:center;color:#999;font-size:.85rem}
   </style>
 </head>
 <body>
@@ -70,9 +76,41 @@
   </div>
 
   <div class="card">
+    <h2>📈 Estado de Resultados (EERR)</h2>
+    {% if not puede_ver_eerr %}
+    <div class="lock">🔒 El EERR es visible solo para Dirección/Gerencia y Administrador de Contrato.</div>
+    {% elif not eerr or not eerr.meses %}
+    <div class="lock">Sin datos de EEPP disponibles todavía.</div>
+    {% elif eerr.error %}
+    <div class="lock">⚠️ {{ eerr.error }}</div>
+    {% else %}
+    <p style="font-size:.8rem;color:#999;margin-bottom:10px">Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible). Materiales queda fuera hasta que tenga costo.</p>
+    <div class="scroll" style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>Período</th><th>Ingresos EEPP</th><th>Costo caja chica</th><th>Costo combustible</th><th>Resultado</th><th>Margen</th></tr>
+        </thead>
+        <tbody>
+          {% for m in eerr.meses %}
+          <tr>
+            <td><strong>{{ m.periodo }}</strong></td>
+            <td>${{ "{:,.0f}".format(m.ingreso_eepp) }}</td>
+            <td>${{ "{:,.0f}".format(m.costo_caja_chica) }}</td>
+            <td>${{ "{:,.0f}".format(m.costo_combustible) }}</td>
+            <td class="{{ 'pos' if m.resultado >= 0 else 'neg' }}">${{ "{:,.0f}".format(m.resultado) }}</td>
+            <td>{{ "%.1f"|format(m.margen_pct) + '%' if m.margen_pct is not none else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
     <h2>📊 Reportería completa</h2>
     <div class="placeholder">
-      Los KPIs contractuales (SLA, Efectividad, EEPP, Improcedencias) viven en el dashboard de
+      Los KPIs contractuales (SLA, Efectividad, Improcedencias) viven en el dashboard de
       Urjta-Cobranza — acá no se duplican. Falta definir el enlace directo una vez que ese dashboard
       quede publicado.
     </div>

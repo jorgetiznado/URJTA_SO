@@ -19,6 +19,7 @@ Bravo) — quedan en la lista con OPERADOR vacío, visibles solo para roles que 
 import pandas as pd
 
 PARQUET_PATH = r"C:\BD\SGC\Salidas\seguimiento.parquet"
+EEPP_PATH    = r"C:\BD\SGC\Salidas\eepp_final.csv"
 
 COLUMNAS_CLIENTES = [
     'ID_SERVICIO', 'FECHA_CORTE', 'DEUDA', 'ANTIGUEDAD',
@@ -67,6 +68,20 @@ def obtener_pendientes(periodo='actual'):
     salida = salida.sort_values('FECHA_CORTE').drop_duplicates('ID_SERVICIO', keep='last')
 
     return salida.reset_index(drop=True)
+
+
+def obtener_eepp_por_periodo():
+    """Ingresos (EEPP) de URJTA por PERIODO de ejecución, uniendo eepp_final.csv
+    (VALOR_EEPP por NUMERO ORDEN) con seguimiento.parquet (fecha de ejecución).
+    Devuelve un DataFrame: PERIODO, INGRESO_EEPP."""
+    eepp = pd.read_csv(EEPP_PATH, dtype=str, sep=None, engine='python', encoding='utf-8-sig')
+    seg = pd.read_parquet(PARQUET_PATH, columns=['NUMERO ORDEN', 'PERIODO'])
+    m = eepp.merge(seg.drop_duplicates('NUMERO ORDEN'), on='NUMERO ORDEN', how='left')
+    m['VALOR_EEPP'] = pd.to_numeric(m['VALOR_EEPP'], errors='coerce').fillna(0)
+    out = m.groupby('PERIODO', dropna=True)['VALOR_EEPP'].sum().reset_index()
+    out.columns = ['PERIODO', 'INGRESO_EEPP']
+    out['PERIODO'] = out['PERIODO'].astype(int)
+    return out.sort_values('PERIODO').reset_index(drop=True)
 
 
 if __name__ == '__main__':

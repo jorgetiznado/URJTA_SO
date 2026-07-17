@@ -206,6 +206,16 @@ def es_direccion(usuario):
     return bool(usuario) and usuario['cargo'] in CARGOS_DIRECCION
 
 
+def puede_ver_eerr():
+    """EERR visible a Dirección/Gerencia + Administrador de Contrato (o clave admin, transición)."""
+    if session.get('admin'):
+        return True
+    usuario = usuario_actual()
+    if not usuario:
+        return False
+    return es_direccion(usuario) or usuario['cargo'] == CARGO_ADMIN_CONTRATO
+
+
 def puede_aprobar_caja_chica():
     """Clave única de admin (transición), o Dirección/Gerencia, o quien tenga
     APRUEBA_CAJA_CHICA=SI en operadores.csv (ej. José, sin depender de su cargo)."""
@@ -529,8 +539,64 @@ def admin_cobranza_panel():
 
     pipeline_disponible = os.path.exists(sync_pipeline.PARQUET_PATH)
 
+    eerr = None
+    if puede_ver_eerr() and pipeline_disponible:
+        try:
+            eepp_df = sync_pipeline.obtener_eepp_por_periodo()
+            eerr = _calcular_eerr(eepp_df)
+        except Exception as e:
+            eerr = {'error': str(e)}
+
     return render_template('admin_cobranza.html', stats=stats,
-                           pipeline_disponible=pipeline_disponible)
+                           pipeline_disponible=pipeline_disponible,
+                           puede_ver_eerr=puede_ver_eerr(), eerr=eerr)
+
+
+def _periodo_de_fecha(serie_fecha):
+    return pd.to_datetime(serie_fecha, dayfirst=True, errors='coerce').dt.strftime('%Y%m')
+
+
+def _calcular_eerr(eepp_df):
+    """Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible) por período,
+    últimos 6 meses. Materiales queda fuera hasta que tenga campo de costo."""
+    if eepp_df.empty:
+        return {'meses': [], 'periodo_actual': None}
+
+    periodos = eepp_df['PERIODO'].tail(6).tolist()
+
+    df_cc = get_caja_chica()
+    cc_rendida = df_cc[df_cc['ESTADO'] == 'RENDIDA'].copy()
+    if not cc_rendida.empty:
+        cc_rendida['PERIODO'] = _periodo_de_fecha(cc_rendida['FECHA_RENDICION']).astype('Int64')
+        cc_por_periodo = pd.to_numeric(cc_rendida['MONTO_TOTAL'], errors='coerce').fillna(0).groupby(cc_rendida['PERIODO']).sum()
+    else:
+        cc_por_periodo = pd.Series(dtype=float)
+
+    df_comb = read_csv_safe(COMBUSTIBLE_PATH)
+    if df_comb is not None and not df_comb.empty and 'MONTO_VALE' in df_comb.columns:
+        df_comb = df_comb.copy()
+        df_comb['PERIODO'] = _periodo_de_fecha(df_comb['FECHA_REGISTRO']).astype('Int64')
+        comb_por_periodo = pd.to_numeric(df_comb['MONTO_VALE'], errors='coerce').fillna(0).groupby(df_comb['PERIODO']).sum()
+    else:
+        comb_por_periodo = pd.Series(dtype=float)
+
+    meses = []
+    for p in periodos:
+        ingreso = float(eepp_df[eepp_df['PERIODO'] == p]['INGRESO_EEPP'].iloc[0])
+        costo_cc = float(cc_por_periodo.get(p, 0) or 0)
+        costo_comb = float(comb_por_periodo.get(p, 0) or 0)
+        costos = costo_cc + costo_comb
+        meses.append({
+            'periodo': str(p),
+            'ingreso_eepp': ingreso,
+            'costo_caja_chica': costo_cc,
+            'costo_combustible': costo_comb,
+            'costos_totales': costos,
+            'resultado': ingreso - costos,
+            'margen_pct': ((ingreso - costos) / ingreso * 100) if ingreso else None,
+        })
+
+    return {'meses': meses, 'periodo_actual': str(periodos[-1]) if periodos else None}
 
 
 @app.route('/admin/login', methods=['POST'])
