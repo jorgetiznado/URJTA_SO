@@ -84,6 +84,44 @@ def obtener_eepp_por_periodo():
     return out.sort_values('PERIODO').reset_index(drop=True)
 
 
+def obtener_resumen_operativo_por_periodo():
+    """Cortes, Repos, Visitas, Improcedencias por PERIODO (fecha de ejecución) —
+    misma lógica que pipeline/medidas.py (cortes/repos/visitas/improcedencia),
+    vectorizado sobre todo el histórico de una sola pasada."""
+    df = pd.read_parquet(
+        PARQUET_PATH,
+        columns=['NUMERO ORDEN', 'TIPO_ACCION', 'TIPO_RESULTADO', 'RESULTADO', 'PERIODO'],
+    )
+    df['PERIODO'] = df['PERIODO'].astype('Int64')
+    es_corte_accion = df['TIPO_ACCION'] == 'CORTE'
+
+    masks = {
+        'CORTES':         es_corte_accion & (df['TIPO_RESULTADO'] == 'CORTE'),
+        'REPOS':          (df['TIPO_ACCION'] == 'REPO') & (df['TIPO_RESULTADO'] == 'CORTE'),
+        'VISITAS':        es_corte_accion & df['RESULTADO'].fillna('').str.startswith('VISITA'),
+        'IMPROCEDENCIAS': es_corte_accion & (df['TIPO_RESULTADO'] == 'CORTE_IMPROCEDENTE'),
+    }
+    columnas = {
+        nombre: df.loc[mask].groupby('PERIODO')['NUMERO ORDEN'].nunique()
+        for nombre, mask in masks.items()
+    }
+    out = pd.DataFrame(columnas).fillna(0).astype(int).reset_index()
+    out['PERIODO'] = out['PERIODO'].astype(int)
+    return out.sort_values('PERIODO').reset_index(drop=True)
+
+
+def obtener_resumen_unificado(meses=6):
+    """La 'gran unión': Cortes/Repos/Visitas/Improcedencias + Ingreso EEPP,
+    por período, últimos `meses`. Los costos (Caja Chica/Combustible, que viven
+    en esta app, no en el pipeline) se agregan después en app.py."""
+    op = obtener_resumen_operativo_por_periodo()
+    eepp = obtener_eepp_por_periodo()
+    out = op.merge(eepp, on='PERIODO', how='outer').fillna(0).sort_values('PERIODO')
+    for col in ['CORTES', 'REPOS', 'VISITAS', 'IMPROCEDENCIAS']:
+        out[col] = out[col].astype(int)
+    return out.tail(meses).reset_index(drop=True)
+
+
 if __name__ == '__main__':
     import sys
     if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':

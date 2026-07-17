@@ -429,7 +429,8 @@ def admin():
         'cc_pendientes':     len(df_cc[df_cc['ESTADO'] == 'PENDIENTE']),
     }
 
-    return render_template('admin_hub.html', stats=stats, error=request.args.get('error'))
+    return render_template('admin_hub.html', stats=stats, error=request.args.get('error'),
+                           active_module='inicio', usuario=usuario_actual())
 
 
 @app.route('/admin/clientes')
@@ -453,7 +454,8 @@ def admin_clientes():
     ultimos = df_r.tail(20).iloc[::-1].to_dict('records') if not df_r.empty else []
 
     return render_template('admin_clientes.html', stats=stats, resumen=resumen,
-                           ultimos=ultimos, error=request.args.get('error'))
+                           ultimos=ultimos, error=request.args.get('error'),
+                           active_module='clientes', usuario=usuario_actual())
 
 
 @app.route('/admin/materiales')
@@ -470,7 +472,8 @@ def admin_materiales_panel():
     ultimos_mat = df_m.tail(10).iloc[::-1].to_dict('records') if df_m is not None and not df_m.empty else []
 
     return render_template('admin_materiales.html', stats=stats, ultimos_mat=ultimos_mat,
-                           error=request.args.get('error'))
+                           error=request.args.get('error'),
+                           active_module='materiales', usuario=usuario_actual())
 
 
 @app.route('/admin/combustible')
@@ -482,7 +485,8 @@ def admin_combustible_panel():
     stats = {'total_combustible': len(df_comb) if df_comb is not None else 0}
     ultimos_comb = df_comb.tail(10).iloc[::-1].to_dict('records') if df_comb is not None and not df_comb.empty else []
 
-    return render_template('admin_combustible.html', stats=stats, ultimos_comb=ultimos_comb)
+    return render_template('admin_combustible.html', stats=stats, ultimos_comb=ultimos_comb,
+                           active_module='combustible', usuario=usuario_actual())
 
 
 @app.route('/admin/operadores')
@@ -492,7 +496,8 @@ def admin_operadores_panel():
 
     operadores = get_operadores()
     stats = {'op_cargado': os.path.exists(OPERADORES_PATH), 'total_operadores': len(operadores)}
-    return render_template('admin_operadores.html', stats=stats, operadores=operadores)
+    return render_template('admin_operadores.html', stats=stats, operadores=operadores,
+                           active_module='operadores', usuario=usuario_actual())
 
 
 @app.route('/admin/caja-chica')
@@ -517,7 +522,8 @@ def admin_caja_chica_panel():
 
     return render_template('admin_caja_chica.html', stats=stats,
                            cc_pendientes=cc_pendientes, cc_aprobadas=cc_aprobadas,
-                           cc_rendidas=cc_rendidas)
+                           cc_rendidas=cc_rendidas,
+                           active_module='caja_chica', usuario=usuario_actual())
 
 
 @app.route('/admin/cobranza')
@@ -542,27 +548,30 @@ def admin_cobranza_panel():
     eerr = None
     if puede_ver_eerr() and pipeline_disponible:
         try:
-            eepp_df = sync_pipeline.obtener_eepp_por_periodo()
-            eerr = _calcular_eerr(eepp_df)
+            unificado = sync_pipeline.obtener_resumen_unificado()
+            eerr = _calcular_eerr(unificado)
         except Exception as e:
             eerr = {'error': str(e)}
 
     return render_template('admin_cobranza.html', stats=stats,
                            pipeline_disponible=pipeline_disponible,
-                           puede_ver_eerr=puede_ver_eerr(), eerr=eerr)
+                           puede_ver_eerr=puede_ver_eerr(), eerr=eerr,
+                           active_module='cobranza', usuario=usuario_actual())
 
 
 def _periodo_de_fecha(serie_fecha):
     return pd.to_datetime(serie_fecha, dayfirst=True, errors='coerce').dt.strftime('%Y%m')
 
 
-def _calcular_eerr(eepp_df):
+def _calcular_eerr(unificado):
     """Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible) por período,
-    últimos 6 meses. Materiales queda fuera hasta que tenga campo de costo."""
-    if eepp_df.empty:
+    más Cortes/Repos/Visitas/Improcedencias del pipeline. Materiales queda
+    fuera del costo hasta que tenga campo de precio (integración Defontana
+    pendiente — ver placeholder en la plantilla)."""
+    if unificado.empty:
         return {'meses': [], 'periodo_actual': None}
 
-    periodos = eepp_df['PERIODO'].tail(6).tolist()
+    periodos = unificado['PERIODO'].tolist()
 
     df_cc = get_caja_chica()
     cc_rendida = df_cc[df_cc['ESTADO'] == 'RENDIDA'].copy()
@@ -581,13 +590,18 @@ def _calcular_eerr(eepp_df):
         comb_por_periodo = pd.Series(dtype=float)
 
     meses = []
-    for p in periodos:
-        ingreso = float(eepp_df[eepp_df['PERIODO'] == p]['INGRESO_EEPP'].iloc[0])
+    for _, fila in unificado.iterrows():
+        p = int(fila['PERIODO'])
+        ingreso = float(fila['INGRESO_EEPP'])
         costo_cc = float(cc_por_periodo.get(p, 0) or 0)
         costo_comb = float(comb_por_periodo.get(p, 0) or 0)
         costos = costo_cc + costo_comb
         meses.append({
             'periodo': str(p),
+            'cortes': int(fila['CORTES']),
+            'repos': int(fila['REPOS']),
+            'visitas': int(fila['VISITAS']),
+            'improcedencias': int(fila['IMPROCEDENCIAS']),
             'ingreso_eepp': ingreso,
             'costo_caja_chica': costo_cc,
             'costo_combustible': costo_comb,

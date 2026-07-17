@@ -1,164 +1,120 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Caja Chica — Admin URJTA</title>
-  <meta name="theme-color" content="#0f8a7e">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
-    header{background:#0f8a7e;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
-    header a{color:#fff;text-decoration:none;font-size:1.3rem}
-    header h1{font-size:1.1rem;flex:1}
-    .container{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-    .card h3{font-size:.85rem;color:#555;margin:14px 0 8px;font-weight:bold}
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
-    .stat .num{font-size:2rem;font-weight:bold;color:#0f8a7e}
-    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
-    .btn-dl{padding:10px 18px;border-radius:6px;text-decoration:none;font-size:.88rem;font-weight:bold;display:inline-block;background:#0f8a7e;color:#fff}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{background:#0f8a7e;color:#fff;padding:9px 8px;text-align:left}
-    td{padding:8px;border-bottom:1px solid #eee}
-    .empty{text-align:center;padding:20px;color:#bbb;font-size:.9rem}
-    .scroll{overflow-x:auto}
-    .section-divider{border:none;border-top:2px solid #f0f2f5;margin:8px 0 12px}
-    .cc-actions{display:flex;gap:6px;flex-wrap:wrap}
-    .btn-aprobar{background:#27ae60;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:.78rem;font-weight:bold;cursor:pointer}
-    .btn-rechazar{background:#e5231d;color:#fff;border:none;border-radius:5px;padding:7px 12px;font-size:.78rem;font-weight:bold;cursor:pointer}
-  </style>
-</head>
-<body>
-<header>
-  <a href="/admin">←</a>
-  <h1>💵 Caja Chica</h1>
-</header>
+{% extends "admin_base.html" %}
+{% block title %}Caja Chica — Admin URJTA{% endblock %}
+{% block accent %}#0f8a7e{% endblock %}
+{% block accent_bg %}#e1f5ee{% endblock %}
+{% block crumbs %}Finanzas{% endblock %}
+{% block page_title %}Caja chica{% endblock %}
+{% block actions %}
+<a href="/descargar/caja-chica" class="btn">Descargar</a>
+{% endblock %}
 
-<div class="container">
-
-  <div class="card">
-    <h2>📊 Resumen</h2>
-    <div class="stats-grid">
-      <div class="stat">
-        <div class="num">{{ stats.cc_pendientes }}</div>
-        <div class="lbl">Por aprobar</div>
-      </div>
-      <div class="stat">
-        <div class="num">{{ stats.cc_aprobadas }}</div>
-        <div class="lbl">Aprobadas, por rendir</div>
-      </div>
-      <div class="stat">
-        <div class="num">{{ stats.cc_rendidas }}</div>
-        <div class="lbl">Rendidas</div>
-      </div>
-      <div class="stat">
-        <div class="num">${{ "{:,.0f}".format(stats.cc_total_rendido) }}</div>
-        <div class="lbl">Total gastado rendido</div>
-      </div>
-    </div>
+{% block content %}
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="lbl">Por aprobar</div>
+    <div class="val">{{ stats.cc_pendientes }}</div>
   </div>
-
-  <div class="card">
-    <h2>⬇ Descargar datos</h2>
-    <a href="/descargar/caja-chica" class="btn-dl">💵 Caja chica</a>
+  <div class="kpi">
+    <div class="lbl">Aprobadas, por rendir</div>
+    <div class="val">{{ stats.cc_aprobadas }}</div>
   </div>
-
-  <div class="card">
-    <h3>Solicitudes pendientes de aprobar</h3>
-    {% if cc_pendientes %}
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr><th>N°</th><th>Fecha</th><th>Solicitante</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Acción</th></tr>
-        </thead>
-        <tbody>
-          {% for s in cc_pendientes %}
-          <tr>
-            <td><strong>{{ s.ID }}</strong></td>
-            <td>{{ s.FECHA_SOLICITUD }}</td>
-            <td>{{ s.SOLICITANTE }}</td>
-            <td>{{ s.CATEGORIA }}</td>
-            <td style="max-width:220px">{{ s.DESCRIPCION }}</td>
-            <td>${{ "{:,.0f}".format(s.MONTO_SOLICITADO|float) }}</td>
-            <td>
-              <div class="cc-actions">
-                <form method="POST" action="/admin/caja-chica/aprobar/{{ s.ID }}" style="display:inline">
-                  <button type="submit" class="btn-aprobar">✓ Aprobar</button>
-                </form>
-                <form method="POST" action="/admin/caja-chica/rechazar/{{ s.ID }}" style="display:inline" onsubmit="return ccPedirMotivo(this)">
-                  <input type="hidden" name="comentario">
-                  <button type="submit" class="btn-rechazar">✗ Rechazar</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin solicitudes pendientes.</p>
-    {% endif %}
-
-    <hr class="section-divider">
-
-    <h3>Aprobadas, pendientes de rendición</h3>
-    {% if cc_aprobadas %}
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr><th>N°</th><th>Fecha aprobación</th><th>Solicitante</th><th>Categoría</th><th>Monto</th></tr>
-        </thead>
-        <tbody>
-          {% for s in cc_aprobadas %}
-          <tr>
-            <td><strong>{{ s.ID }}</strong></td>
-            <td>{{ s.FECHA_APROBACION }}</td>
-            <td>{{ s.SOLICITANTE }}</td>
-            <td>{{ s.CATEGORIA }}</td>
-            <td>${{ "{:,.0f}".format(s.MONTO_SOLICITADO|float) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin solicitudes aprobadas en espera de rendición.</p>
-    {% endif %}
-
-    <hr class="section-divider">
-
-    <h3>Últimas rendiciones</h3>
-    {% if cc_rendidas %}
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr><th>N°</th><th>Fecha</th><th>Solicitante</th><th>Documento</th><th>Proveedor</th><th>Monto total</th></tr>
-        </thead>
-        <tbody>
-          {% for s in cc_rendidas %}
-          <tr>
-            <td><strong>{{ s.ID }}</strong></td>
-            <td>{{ s.FECHA_RENDICION }}</td>
-            <td>{{ s.SOLICITANTE }}</td>
-            <td>{{ s.TIPO_DOCUMENTO }} {{ s.NUM_DOCUMENTO }}</td>
-            <td>{{ s.RAZON_SOCIAL or '—' }}</td>
-            <td>${{ "{:,.0f}".format(s.MONTO_TOTAL|float) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin rendiciones registradas aún.</p>
-    {% endif %}
+  <div class="kpi">
+    <div class="lbl">Rendidas</div>
+    <div class="val">{{ stats.cc_rendidas }}</div>
   </div>
-
+  <div class="kpi">
+    <div class="lbl">Total gastado rendido</div>
+    <div class="val">${{ "{:,.0f}".format(stats.cc_total_rendido) }}</div>
+  </div>
 </div>
 
+<div class="panel">
+  <h2>Solicitudes pendientes de aprobar</h2>
+  {% if cc_pendientes %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>N°</th><th>Fecha</th><th>Solicitante</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Acción</th></tr></thead>
+      <tbody>
+        {% for s in cc_pendientes %}
+        <tr>
+          <td><strong>{{ s.ID }}</strong></td>
+          <td>{{ s.FECHA_SOLICITUD }}</td>
+          <td>{{ s.SOLICITANTE }}</td>
+          <td>{{ s.CATEGORIA }}</td>
+          <td style="max-width:220px">{{ s.DESCRIPCION }}</td>
+          <td>${{ "{:,.0f}".format(s.MONTO_SOLICITADO|float) }}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <form method="POST" action="/admin/caja-chica/aprobar/{{ s.ID }}" style="display:inline">
+                <button type="submit" class="btn-aprobar">✓ Aprobar</button>
+              </form>
+              <form method="POST" action="/admin/caja-chica/rechazar/{{ s.ID }}" style="display:inline" onsubmit="return ccPedirMotivo(this)">
+                <input type="hidden" name="comentario">
+                <button type="submit" class="btn-rechazar">✗ Rechazar</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin solicitudes pendientes.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Aprobadas, pendientes de rendición</h2>
+  {% if cc_aprobadas %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>N°</th><th>Fecha aprobación</th><th>Solicitante</th><th>Categoría</th><th>Monto</th></tr></thead>
+      <tbody>
+        {% for s in cc_aprobadas %}
+        <tr>
+          <td><strong>{{ s.ID }}</strong></td>
+          <td>{{ s.FECHA_APROBACION }}</td>
+          <td>{{ s.SOLICITANTE }}</td>
+          <td>{{ s.CATEGORIA }}</td>
+          <td>${{ "{:,.0f}".format(s.MONTO_SOLICITADO|float) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin solicitudes aprobadas en espera de rendición.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Últimas rendiciones</h2>
+  {% if cc_rendidas %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>N°</th><th>Fecha</th><th>Solicitante</th><th>Documento</th><th>Proveedor</th><th>Monto total</th></tr></thead>
+      <tbody>
+        {% for s in cc_rendidas %}
+        <tr>
+          <td><strong>{{ s.ID }}</strong></td>
+          <td>{{ s.FECHA_RENDICION }}</td>
+          <td>{{ s.SOLICITANTE }}</td>
+          <td>{{ s.TIPO_DOCUMENTO }} {{ s.NUM_DOCUMENTO }}</td>
+          <td>{{ s.RAZON_SOCIAL or '—' }}</td>
+          <td>${{ "{:,.0f}".format(s.MONTO_TOTAL|float) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin rendiciones registradas aún.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
   function ccPedirMotivo(form) {
     const motivo = prompt('Motivo del rechazo:');
@@ -167,5 +123,4 @@
     return true;
   }
 </script>
-</body>
-</html>
+{% endblock %}

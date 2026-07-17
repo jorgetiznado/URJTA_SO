@@ -1,139 +1,83 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clientes y Cortes — Admin URJTA</title>
-  <meta name="theme-color" content="#27ae60">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
-    header{background:#27ae60;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
-    header a{color:#fff;text-decoration:none;font-size:1.3rem}
-    header h1{font-size:1.1rem;flex:1}
-    .container{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-    .card h3{font-size:.85rem;color:#555;margin:14px 0 8px;font-weight:bold}
-    .upload-error{background:#fde8e8;color:#e5231d;padding:14px 16px;border-radius:8px;margin-bottom:14px;font-size:.88rem;font-weight:bold}
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
-    .stat .num{font-size:2rem;font-weight:bold;color:#27ae60}
-    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
-    .upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-    input[type=file]{padding:8px;border:1px solid #ccc;border-radius:5px;font-size:.88rem;flex:1;min-width:200px}
-    .btn{padding:9px 18px;border:none;border-radius:5px;cursor:pointer;font-size:.88rem;font-weight:bold}
-    .btn-upload{background:#27ae60;color:#fff}
-    .btn-dl{padding:10px 18px;border-radius:6px;text-decoration:none;font-size:.88rem;font-weight:bold;display:inline-block;margin-right:8px;margin-bottom:8px}
-    .btn-dl-r{background:#0f69be;color:#fff}
-    .btn-dl-c{background:#5e2900;color:#fff}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{background:#27ae60;color:#fff;padding:9px 8px;text-align:left}
-    td{padding:8px;border-bottom:1px solid #eee}
-    .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:.75rem;font-weight:bold}
-    .badge-c{background:#e8f5e9;color:#1e8449}
-    .badge-a{background:#fff3e0;color:#e67e22}
-    .badge-o{background:#f3f4f6;color:#555}
-    .resumen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
-    .res-item{border-radius:8px;padding:12px;text-align:center}
-    .res-item.CORTADO{background:#e8f5e9}
-    .res-item.AUTOREPUESTO{background:#fff3e0}
-    .res-item.OTRO{background:#f3f4f6}
-    .res-item .num{font-size:1.8rem;font-weight:bold}
-    .res-item .lbl{font-size:.75rem;color:#666}
-    .empty{text-align:center;padding:20px;color:#bbb;font-size:.9rem}
-    .alert-ok{background:#e8f5e9;color:#1e8449;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .alert-warn{background:#fff3e0;color:#b7770d;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .scroll{overflow-x:auto}
-  </style>
-</head>
-<body>
-<header>
-  <a href="/admin">←</a>
-  <h1>📋 Clientes y Cortes</h1>
-</header>
+{% extends "admin_base.html" %}
+{% block title %}Clientes y Cortes — Admin URJTA{% endblock %}
+{% block accent %}#27ae60{% endblock %}
+{% block accent_bg %}#e8f5ec{% endblock %}
+{% block crumbs %}Operaciones{% endblock %}
+{% block page_title %}Clientes y cortes{% endblock %}
+{% block actions %}
+<a href="/descargar/ejemplo" class="btn">Formato ejemplo</a>
+<a href="/admin/cobranza" class="btn btn-accent" style="background:#27ae60">Ir a Cobranza →</a>
+{% endblock %}
 
-<div class="container">
+{% block content %}
+{% if error %}
+<div class="upload-error">⚠️ {{ error }}</div>
+{% endif %}
 
-  {% if error %}
-  <div class="upload-error">⚠️ {{ error }}</div>
-  {% endif %}
-
-  <div class="card">
-    <h2>📊 Resumen</h2>
-    <div class="stats-grid">
-      <div class="stat">
-        <div class="num">{{ stats.total_clientes }}</div>
-        <div class="lbl">Clientes cargados</div>
-      </div>
-      <div class="stat">
-        <div class="num">{{ stats.total_gestionados }}</div>
-        <div class="lbl">Cortes registrados</div>
-      </div>
-    </div>
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="lbl">Clientes cargados</div>
+    <div class="val">{{ stats.total_clientes }}</div>
   </div>
-
-  <div class="card">
-    <h2>📂 Cargar lista de clientes</h2>
-    {% if stats.csv_cargado %}<div class="alert-ok">✅ CSV de clientes cargado</div>{% else %}<div class="alert-warn">⚠️ Sin CSV de clientes</div>{% endif %}
-    <form action="/subir-csv" method="POST" enctype="multipart/form-data">
-      <div class="upload-row">
-        <input type="file" name="csv" accept=".csv" required>
-        <button type="submit" class="btn btn-upload">⬆ Cargar</button>
-      </div>
-    </form>
-    <a href="/descargar/ejemplo" style="font-size:.8rem;color:#27ae60;display:inline-block;margin-top:6px">⬇ Descargar formato de ejemplo</a>
-    <p style="font-size:.78rem;color:#999;margin-top:10px">¿Prefieres traer los pendientes directo desde el pipeline de datos? Ve a <a href="/admin/cobranza" style="color:#a67c00;font-weight:bold">Cobranza</a>.</p>
+  <div class="kpi">
+    <div class="lbl">Cortes registrados</div>
+    <div class="val">{{ stats.total_gestionados }}</div>
   </div>
-
-  <div class="card">
-    <h2>⬇ Descargar datos</h2>
-    <a href="/descargar/resultados"  class="btn-dl btn-dl-r">📄 Resultados cortes</a>
-    <a href="/descargar/consolidado" class="btn-dl btn-dl-c">📊 Consolidado</a>
-  </div>
-
-  {% if resumen %}
-  <div class="card">
-    <h2>📈 Resultados de cortes</h2>
-    <div class="resumen-grid">
-      {% for r in resumen %}
-      <div class="res-item {{ r.RESULTADO }}">
-        <div class="num">{{ r.CANTIDAD }}</div>
-        <div class="lbl">{{ r.RESULTADO }}</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="card">
-    <h2>🕐 Últimos registros de cortes</h2>
-    {% if ultimos %}
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr><th>Fecha</th><th>ID</th><th>Operador</th><th>Resultado</th><th>Acción</th><th>Detalle</th><th>Fotos</th></tr>
-        </thead>
-        <tbody>
-          {% for r in ultimos %}
-          <tr>
-            <td>{{ r.FECHA_REGISTRO }}</td>
-            <td><strong>{{ r.ID_SERVICIO }}</strong></td>
-            <td>{{ r.OPERADOR_REGISTRO or '—' }}</td>
-            <td><span class="badge {% if r.RESULTADO=='CORTADO' %}badge-c{% elif r.RESULTADO=='AUTOREPUESTO' %}badge-a{% else %}badge-o{% endif %}">{{ r.RESULTADO }}</span></td>
-            <td>{{ r.ACCION or '—' }}</td>
-            <td>{{ r.TIPO_CORTE_SEL or r.IMPROCEDENCIA or '—' }}</td>
-            <td>{{ r.CANT_FOTOS or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin registros aún.</p>
-    {% endif %}
-  </div>
-
 </div>
-</body>
-</html>
+
+<div class="panel">
+  <h2>Cargar lista de clientes</h2>
+  <div class="sub">{% if stats.csv_cargado %}<span class="pill good">CSV cargado</span>{% else %}<span class="pill warn">sin CSV</span>{% endif %}</div>
+  <form action="/subir-csv" method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <input type="file" name="csv" accept=".csv" required>
+    <button type="submit" class="btn btn-accent" style="background:#27ae60">Cargar</button>
+  </form>
+  <p style="font-size:.78rem;color:var(--ink-muted)">¿Prefieres traer los pendientes directo desde el pipeline? Ve a <a href="/admin/cobranza" style="color:var(--brand);font-weight:600">Cobranza</a>.</p>
+</div>
+
+<div class="panel">
+  <h2>Descargar datos</h2>
+  <a href="/descargar/resultados" class="btn" style="margin-right:8px">Resultados cortes</a>
+  <a href="/descargar/consolidado" class="btn">Consolidado</a>
+</div>
+
+{% if resumen %}
+<div class="panel">
+  <h2>Resultados de cortes</h2>
+  <div class="kpi-row">
+    {% for r in resumen %}
+    <div class="kpi">
+      <div class="lbl">{{ r.RESULTADO }}</div>
+      <div class="val">{{ r.CANTIDAD }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Últimos registros de cortes</h2>
+  {% if ultimos %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>ID</th><th>Operador</th><th>Resultado</th><th>Acción</th><th>Detalle</th><th>Fotos</th></tr></thead>
+      <tbody>
+        {% for r in ultimos %}
+        <tr>
+          <td>{{ r.FECHA_REGISTRO }}</td>
+          <td><strong>{{ r.ID_SERVICIO }}</strong></td>
+          <td>{{ r.OPERADOR_REGISTRO or '—' }}</td>
+          <td><span class="pill {% if r.RESULTADO=='CORTADO' %}good{% elif r.RESULTADO=='AUTOREPUESTO' %}warn{% else %}muted{% endif %}">{{ r.RESULTADO }}</span></td>
+          <td>{{ r.ACCION or '—' }}</td>
+          <td>{{ r.TIPO_CORTE_SEL or r.IMPROCEDENCIA or '—' }}</td>
+          <td>{{ r.CANT_FOTOS or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin registros aún.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,95 +1,54 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Operadores — Admin URJTA</title>
-  <meta name="theme-color" content="#0f69be">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
-    header{background:#0f69be;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
-    header a{color:#fff;text-decoration:none;font-size:1.3rem}
-    header h1{font-size:1.1rem;flex:1}
-    .container{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
-    .stat .num{font-size:2rem;font-weight:bold;color:#0f69be}
-    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
-    .upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-    input[type=file]{padding:8px;border:1px solid #ccc;border-radius:5px;font-size:.88rem;flex:1;min-width:200px}
-    .btn{padding:9px 18px;border:none;border-radius:5px;cursor:pointer;font-size:.88rem;font-weight:bold}
-    .btn-upload{background:#0f69be;color:#fff}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{background:#0f69be;color:#fff;padding:9px 8px;text-align:left}
-    td{padding:8px;border-bottom:1px solid #eee}
-    .badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:.72rem;font-weight:bold}
-    .badge-OPERADOR{background:#f3f4f6;color:#555}
-    .badge-ADMINISTRATIVO,.badge-SUPERVISOR{background:#eaf3fb;color:#0f69be}
-    .badge-ADMINISTRADOR-DE-CONTRATO{background:#e6f5f2;color:#0f8a7e}
-    .badge-DIRECCION,.badge-GERENCIA{background:#fdf1de;color:#a67c00}
-    .badge-FICTICIO{background:#f3f4f6;color:#bbb}
-    .empty{text-align:center;padding:20px;color:#bbb;font-size:.9rem}
-    .alert-ok{background:#e8f5e9;color:#1e8449;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .alert-warn{background:#fff3e0;color:#b7770d;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .scroll{overflow-x:auto}
-  </style>
-</head>
-<body>
-<header>
-  <a href="/admin">←</a>
-  <h1>👥 Operadores</h1>
-</header>
+{% extends "admin_base.html" %}
+{% block title %}Operadores — Admin URJTA{% endblock %}
+{% block accent %}#0f69be{% endblock %}
+{% block accent_bg %}#e6f1fb{% endblock %}
+{% block crumbs %}Operaciones{% endblock %}
+{% block page_title %}Operadores{% endblock %}
 
-<div class="container">
-
-  <div class="card">
-    <h2>📊 Resumen</h2>
-    <div class="stats-grid">
-      <div class="stat">
-        <div class="num">{{ stats.total_operadores }}</div>
-        <div class="lbl">Operadores cargados</div>
-      </div>
-    </div>
+{% block content %}
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="lbl">Operadores cargados</div>
+    <div class="val">{{ stats.total_operadores }}</div>
   </div>
-
-  <div class="card">
-    <h2>📂 Cargar catálogo de operadores</h2>
-    {% if stats.op_cargado %}<div class="alert-ok">✅ CSV de operadores cargado</div>{% else %}<div class="alert-warn">⚠️ Sin CSV de operadores</div>{% endif %}
-    <form action="/subir-operadores" method="POST" enctype="multipart/form-data">
-      <div class="upload-row">
-        <input type="file" name="csv" accept=".csv" required>
-        <button type="submit" class="btn btn-upload">⬆ Cargar</button>
-      </div>
-    </form>
-    <p style="font-size:.78rem;color:#999;margin-top:6px">Columnas: <code>CODIGO;NOMBRE;CARGO</code> (opcional: CONTRATO, ZONA, ESTADO). Valores de CARGO reconocidos: OPERADOR, ADMINISTRATIVO, SUPERVISOR, ADMINISTRADOR DE CONTRATO, DIRECCION, GERENCIA.</p>
-  </div>
-
-  <div class="card">
-    <h2>📋 Catálogo actual</h2>
-    {% if operadores %}
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Código</th><th>Nombre</th><th>Cargo</th><th>Estado</th></tr></thead>
-        <tbody>
-          {% for op in operadores %}
-          <tr>
-            <td>{{ op.CODIGO }}</td>
-            <td>{{ op.NOMBRE }}</td>
-            <td><span class="badge badge-{{ (op.CARGO or '')|replace(' ', '-') }}">{{ op.CARGO or '—' }}</span></td>
-            <td>{{ op.ESTADO or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin operadores cargados aún.</p>
-    {% endif %}
-  </div>
-
 </div>
-</body>
-</html>
+
+<div class="panel">
+  <h2>Cargar catálogo de operadores</h2>
+  <div class="sub">{% if stats.op_cargado %}<span class="pill good">CSV cargado</span>{% else %}<span class="pill warn">sin CSV</span>{% endif %}</div>
+  <form action="/subir-operadores" method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <input type="file" name="csv" accept=".csv" required>
+    <button type="submit" class="btn btn-accent" style="background:#0f69be">Cargar</button>
+  </form>
+  <p style="font-size:.78rem;color:var(--ink-muted)">Columnas: <code>CODIGO;NOMBRE;CARGO</code> (opcional: CONTRATO, ZONA, ESTADO, APRUEBA_CAJA_CHICA). Cargos: OPERADOR, ADMINISTRATIVO, SUPERVISOR, ADMINISTRADOR DE CONTRATO, DIRECCION, GERENCIA.</p>
+</div>
+
+<div class="panel">
+  <h2>Catálogo actual</h2>
+  {% if operadores %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Código</th><th>Nombre</th><th>Cargo</th><th>Aprueba caja chica</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for op in operadores %}
+        <tr>
+          <td>{{ op.CODIGO }}</td>
+          <td>{{ op.NOMBRE }}</td>
+          <td>
+            {% if op.CARGO in ['DIRECCION','GERENCIA'] %}<span class="pill warn">{{ op.CARGO }}</span>
+            {% elif op.CARGO == 'ADMINISTRADOR DE CONTRATO' %}<span class="pill good">{{ op.CARGO }}</span>
+            {% elif op.CARGO in ['ADMINISTRATIVO','SUPERVISOR'] %}<span class="pill muted">{{ op.CARGO }}</span>
+            {% else %}{{ op.CARGO or '—' }}{% endif %}
+          </td>
+          <td>{% if op.APRUEBA_CAJA_CHICA == 'SI' %}<span class="pill good">Sí</span>{% else %}—{% endif %}</td>
+          <td>{{ op.ESTADO or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin operadores cargados aún.</p>
+  {% endif %}
+</div>
+{% endblock %}

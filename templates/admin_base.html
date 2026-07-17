@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin URJTA{% endblock %}</title>
+  <meta name="theme-color" content="#241a10">
+  <style>
+    :root{
+      --paper:#f5f2ed; --panel:#ffffff; --border:#e4ddd1; --border-strong:#d5cbb8;
+      --ink:#1f1a16; --ink-soft:#6b5d4f; --ink-muted:#a3927e;
+      --brand:#5e2900; --sidebar-bg:#241a10; --sidebar-ink:#e8d9c4; --sidebar-muted:#8a7864;
+      --accent:{% block accent %}#a67c00{% endblock %}; --accent-bg:{% block accent_bg %}#faf1dc{% endblock %};
+      --good:#1e8449; --good-bg:#e8f5ec;
+      --warn:#b7770d; --warn-bg:#fdf1de;
+      --risk:#c0392b; --risk-bg:#fbe9e7;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,"Segoe UI",system-ui,sans-serif}
+    .shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+    .sidebar{background:var(--sidebar-bg);color:var(--sidebar-ink);padding:20px 14px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;overflow-y:auto}
+    .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 22px;text-decoration:none}
+    .brand .mark{width:30px;height:30px;border-radius:7px;background:#fff;flex-shrink:0;object-fit:cover}
+    .brand b{font-size:.9rem;letter-spacing:.02em;color:#fff}
+    .brand span{display:block;font-size:.66rem;color:var(--sidebar-muted)}
+    .nav-group{font-size:.65rem;text-transform:uppercase;letter-spacing:.09em;color:var(--sidebar-muted);padding:14px 10px 6px;font-weight:600}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:.84rem;color:var(--sidebar-ink);text-decoration:none;opacity:.7}
+    .nav-item .dot{width:6px;height:6px;border-radius:50%;background:var(--sidebar-muted);flex-shrink:0}
+    .nav-item:hover{background:rgba(255,255,255,.05);opacity:.9}
+    .nav-item.active{background:rgba(255,255,255,.09);opacity:1}
+    .nav-item.active .dot{background:var(--accent)}
+    .nav-item.soon{opacity:.4;cursor:default}
+    .nav-item .soon-tag{margin-left:auto;font-size:.6rem;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:8px}
+    .sidebar-foot{margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);font-size:.74rem;color:var(--sidebar-muted)}
+    .sidebar-foot a{color:var(--sidebar-muted);text-decoration:none}
+
+    .main{display:flex;flex-direction:column;min-width:0}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--border);background:var(--panel)}
+    .topbar .crumbs{font-size:.72rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+    .topbar h1{font-size:1.2rem;font-weight:600;margin:0;color:var(--ink)}
+    .topbar .actions{display:flex;gap:10px;align-items:center}
+
+    .content{padding:26px 28px;display:flex;flex-direction:column;gap:20px}
+
+    .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+    .kpi{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+    .kpi .lbl{font-size:.7rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+    .kpi .val{font-family:ui-monospace,"Cascadia Code","SF Mono",monospace;font-variant-numeric:tabular-nums;font-size:1.4rem;font-weight:600;color:var(--ink)}
+    .kpi .delta{font-size:.74rem;margin-top:6px;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px}
+    .kpi .delta.good{background:var(--good-bg);color:var(--good)}
+    .kpi .delta.warn{background:var(--warn-bg);color:var(--warn)}
+    .kpi .delta.risk{background:var(--risk-bg);color:var(--risk)}
+
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+    .panel h2{font-size:.88rem;font-weight:600;margin:0 0 4px;color:var(--ink)}
+    .panel .sub{font-size:.76rem;color:var(--ink-muted);margin-bottom:14px}
+
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);padding:8px 10px;border-bottom:1px solid var(--border);font-weight:600}
+    td{padding:10px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+    tr:last-child td{border-bottom:none}
+    .scroll{overflow-x:auto}
+
+    .pill{display:inline-flex;padding:2px 9px;border-radius:10px;font-size:.72rem;font-weight:600}
+    .pill.good{background:var(--good-bg);color:var(--good)}
+    .pill.warn{background:var(--warn-bg);color:var(--warn)}
+    .pill.risk{background:var(--risk-bg);color:var(--risk)}
+    .pill.muted{background:#f1ece0;color:#8a7a5c}
+
+    .btn{padding:9px 16px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--border-strong);background:var(--panel);color:var(--ink);text-decoration:none;display:inline-block}
+    .btn-accent{background:var(--accent);color:#fff;border:none}
+    .btn-aprobar{background:#27ae60;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:.78rem;font-weight:bold;cursor:pointer}
+    .btn-rechazar{background:#c0392b;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:.78rem;font-weight:bold;cursor:pointer}
+
+    input[type=file],select{padding:9px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.85rem;background:var(--panel);color:var(--ink)}
+
+    .placeholder-card{background:var(--paper);border:2px dashed var(--border-strong);border-radius:12px;padding:24px;text-align:center;color:var(--ink-muted);font-size:.85rem}
+    .placeholder-card b{color:var(--ink-soft)}
+    .lock{background:var(--paper);border-radius:8px;padding:20px;text-align:center;color:var(--ink-muted);font-size:.85rem}
+    .upload-error{background:var(--risk-bg);color:var(--risk);padding:14px 16px;border-radius:8px;font-size:.88rem;font-weight:bold}
+    .alert-ok{background:var(--good-bg);color:var(--good);padding:8px 12px;border-radius:6px;font-size:.82rem}
+    .alert-warn{background:var(--warn-bg);color:var(--warn);padding:8px 12px;border-radius:6px;font-size:.82rem}
+
+    @media(max-width:860px){.shell{grid-template-columns:1fr}.sidebar{display:none}}
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+  <div class="sidebar">
+    <a href="/" class="brand">
+      <img src="/static/logo-mark.png" class="mark" alt="">
+      <div><b>URJTA Admin</b><span>Sistema de gestión</span></div>
+    </a>
+
+    <div class="nav-group">General</div>
+    <a href="/admin" class="nav-item {{ 'active' if active_module == 'inicio' else '' }}"><span class="dot"></span>Resumen</a>
+
+    <div class="nav-group">Operaciones</div>
+    <a href="/admin/clientes" class="nav-item {{ 'active' if active_module == 'clientes' else '' }}"><span class="dot"></span>Clientes y cortes</a>
+    <a href="/admin/materiales" class="nav-item {{ 'active' if active_module == 'materiales' else '' }}"><span class="dot"></span>Materiales</a>
+    <a href="/admin/combustible" class="nav-item {{ 'active' if active_module == 'combustible' else '' }}"><span class="dot"></span>Combustible</a>
+    <a href="/admin/operadores" class="nav-item {{ 'active' if active_module == 'operadores' else '' }}"><span class="dot"></span>Operadores</a>
+
+    <div class="nav-group">Finanzas</div>
+    <a href="/admin/cobranza" class="nav-item {{ 'active' if active_module == 'cobranza' else '' }}"><span class="dot"></span>Cobranza</a>
+    <a href="/admin/caja-chica" class="nav-item {{ 'active' if active_module == 'caja_chica' else '' }}"><span class="dot"></span>Caja chica</a>
+
+    <div class="nav-group">Próximamente</div>
+    <span class="nav-item soon"><span class="dot"></span>Dotación / RR.HH.<span class="soon-tag">pronto</span></span>
+    <span class="nav-item soon"><span class="dot"></span>Reportes ejecutivos<span class="soon-tag">pronto</span></span>
+
+    <div class="sidebar-foot">
+      {% if session.get('admin') %}
+      Sesión maestra · <a href="/admin/logout">Cerrar sesión</a>
+      {% elif usuario %}
+      {{ usuario.nombre }} — {{ usuario.cargo }}<br><a href="/logout">Cerrar sesión</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumbs">{% block crumbs %}Admin{% endblock %}</div>
+        <h1>{% block page_title %}{% endblock %}</h1>
+      </div>
+      <div class="actions">{% block actions %}{% endblock %}</div>
+    </div>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

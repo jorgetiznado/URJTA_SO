@@ -1,121 +1,118 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cobranza — Admin URJTA</title>
-  <meta name="theme-color" content="#a67c00">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
-    header{background:#a67c00;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
-    header a{color:#fff;text-decoration:none;font-size:1.3rem}
-    header h1{font-size:1.1rem;flex:1}
-    .container{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
-    .stat .num{font-size:1.6rem;font-weight:bold;color:#a67c00}
-    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
-    .stat.good .num{color:#1e8449}
-    .stat.warn .num{color:#b7770d}
-    .btn-sync{display:inline-block;background:#a67c00;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:.9rem}
-    .btn-sync:active{background:#8a6800}
-    .pipeline-status{padding:12px 14px;border-radius:8px;font-size:.85rem;margin-bottom:14px}
-    .pipeline-ok{background:#e8f5e9;color:#1e8449}
-    .pipeline-warn{background:#fff3e0;color:#b7770d}
-    .placeholder{background:#f8f9fa;border:2px dashed #ddd;border-radius:8px;padding:20px;text-align:center;color:#999;font-size:.85rem}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{background:#a67c00;color:#fff;padding:9px 8px;text-align:left}
-    td{padding:8px;border-bottom:1px solid #eee;font-variant-numeric:tabular-nums}
-    .neg{color:#c0392b}
-    .pos{color:#1e8449}
-    .lock{background:#f8f9fa;border-radius:8px;padding:20px;text-align:center;color:#999;font-size:.85rem}
-  </style>
-</head>
-<body>
-<header>
-  <a href="/admin">←</a>
-  <h1>📈 Cobranza</h1>
-</header>
+{% extends "admin_base.html" %}
+{% block title %}Cobranza — Admin URJTA{% endblock %}
+{% block accent %}#a67c00{% endblock %}
+{% block accent_bg %}#faf1dc{% endblock %}
+{% block crumbs %}Finanzas{% endblock %}
+{% block page_title %}Cobranza{% endblock %}
+{% block actions %}
+<a href="/admin/sincronizar-pipeline" class="btn btn-accent" style="background:#a67c00">Sincronizar pipeline</a>
+{% endblock %}
 
-<div class="container">
+{% block content %}
 
-  <div class="card">
-    <h2>💰 Estado de pago (clientes cargados)</h2>
-    <div class="stats-grid">
-      <div class="stat good">
-        <div class="num">{{ stats.total_pagado }}</div>
-        <div class="lbl">Pagados</div>
-      </div>
-      <div class="stat warn">
-        <div class="num">{{ stats.total_sin_pago }}</div>
-        <div class="lbl">Sin pago</div>
-      </div>
-      <div class="stat good">
-        <div class="num">${{ "{:,.0f}".format(stats.monto_pagado) }}</div>
-        <div class="lbl">Deuda pagada</div>
-      </div>
-      <div class="stat warn">
-        <div class="num">${{ "{:,.0f}".format(stats.monto_sin_pago) }}</div>
-        <div class="lbl">Deuda pendiente</div>
-      </div>
+<div class="panel">
+  <h2>Deuda de clientes finales</h2>
+  <div class="sub">Operativo — desde clientes.csv</div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="lbl">Pagados</div>
+      <div class="val">{{ stats.total_pagado }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Sin pago</div>
+      <div class="val">{{ stats.total_sin_pago }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Deuda pagada</div>
+      <div class="val">${{ "{:,.0f}".format(stats.monto_pagado) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Deuda pendiente</div>
+      <div class="val">${{ "{:,.0f}".format(stats.monto_sin_pago) }}</div>
     </div>
   </div>
-
-  <div class="card">
-    <h2>🔄 Pipeline de datos (Urjta-Cobranza)</h2>
-    {% if pipeline_disponible %}
-    <div class="pipeline-status pipeline-ok">✅ seguimiento.parquet disponible — datos actualizados del contrato de corte y repo</div>
-    {% else %}
-    <div class="pipeline-status pipeline-warn">⚠️ No se encontró seguimiento.parquet — revisa que el pipeline haya corrido</div>
-    {% endif %}
-    <p style="font-size:.85rem;color:#666;margin-bottom:14px">Trae los cortes pendientes directo desde el pipeline canónico (reemplaza la carga manual de CSV), con respaldo automático antes de escribir.</p>
-    <a href="/admin/sincronizar-pipeline" class="btn-sync">🔄 Sincronizar desde pipeline</a>
-  </div>
-
-  <div class="card">
-    <h2>📈 Estado de Resultados (EERR)</h2>
-    {% if not puede_ver_eerr %}
-    <div class="lock">🔒 El EERR es visible solo para Dirección/Gerencia y Administrador de Contrato.</div>
-    {% elif not eerr or not eerr.meses %}
-    <div class="lock">Sin datos de EEPP disponibles todavía.</div>
-    {% elif eerr.error %}
-    <div class="lock">⚠️ {{ eerr.error }}</div>
-    {% else %}
-    <p style="font-size:.8rem;color:#999;margin-bottom:10px">Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible). Materiales queda fuera hasta que tenga costo.</p>
-    <div class="scroll" style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr><th>Período</th><th>Ingresos EEPP</th><th>Costo caja chica</th><th>Costo combustible</th><th>Resultado</th><th>Margen</th></tr>
-        </thead>
-        <tbody>
-          {% for m in eerr.meses %}
-          <tr>
-            <td><strong>{{ m.periodo }}</strong></td>
-            <td>${{ "{:,.0f}".format(m.ingreso_eepp) }}</td>
-            <td>${{ "{:,.0f}".format(m.costo_caja_chica) }}</td>
-            <td>${{ "{:,.0f}".format(m.costo_combustible) }}</td>
-            <td class="{{ 'pos' if m.resultado >= 0 else 'neg' }}">${{ "{:,.0f}".format(m.resultado) }}</td>
-            <td>{{ "%.1f"|format(m.margen_pct) + '%' if m.margen_pct is not none else '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="card">
-    <h2>📊 Reportería completa</h2>
-    <div class="placeholder">
-      Los KPIs contractuales (SLA, Efectividad, Improcedencias) viven en el dashboard de
-      Urjta-Cobranza — acá no se duplican. Falta definir el enlace directo una vez que ese dashboard
-      quede publicado.
-    </div>
-  </div>
-
 </div>
-</body>
-</html>
+
+<div class="panel">
+  <h2>Estado de Resultados (EERR)</h2>
+  <div class="sub">Ingresos (EEPP) − Costos (Caja chica + Combustible) · visible para Dirección/Gerencia y Administrador de Contrato</div>
+
+  {% if not puede_ver_eerr %}
+  <div class="lock">🔒 No tienes acceso a esta sección.</div>
+  {% elif not eerr or not eerr.meses %}
+  <div class="lock">Sin datos de EEPP disponibles todavía.</div>
+  {% elif eerr.error %}
+  <div class="lock">⚠️ {{ eerr.error }}</div>
+  {% else %}
+
+  {% set ultimo = eerr.meses[-1] %}
+  <div class="kpi-row" style="margin-bottom:16px">
+    <div class="kpi">
+      <div class="lbl">Ingreso EEPP ({{ ultimo.periodo }})</div>
+      <div class="val">${{ "{:,.0f}".format(ultimo.ingreso_eepp) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Costos totales</div>
+      <div class="val">${{ "{:,.0f}".format(ultimo.costos_totales) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Resultado</div>
+      <div class="val" style="color:{{ '#1e8449' if ultimo.resultado >= 0 else '#c0392b' }}">${{ "{:,.0f}".format(ultimo.resultado) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Margen</div>
+      <div class="val">{{ "%.1f"|format(ultimo.margen_pct) + '%' if ultimo.margen_pct is not none else '—' }}</div>
+      {% if eerr.meses|length > 1 %}
+      {% set anterior = eerr.meses[-2] %}
+      {% if anterior.margen_pct is not none and ultimo.margen_pct is not none %}
+      <span class="delta {{ 'good' if ultimo.margen_pct >= anterior.margen_pct else 'warn' }}">
+        {{ '+' if ultimo.margen_pct >= anterior.margen_pct else '' }}{{ "%.1f"|format(ultimo.margen_pct - anterior.margen_pct) }} pp vs mes anterior
+      </span>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Período</th><th>Cortes</th><th>Repos</th><th>Visitas</th><th>Improc.</th><th>Ingreso EEPP</th><th>Costo CC</th><th>Costo comb.</th><th>Resultado</th><th>Margen</th></tr>
+      </thead>
+      <tbody>
+        {% for m in eerr.meses %}
+        <tr>
+          <td><strong>{{ m.periodo }}</strong></td>
+          <td>{{ m.cortes }}</td>
+          <td>{{ m.repos }}</td>
+          <td>{{ m.visitas }}</td>
+          <td>{{ m.improcedencias }}</td>
+          <td>${{ "{:,.0f}".format(m.ingreso_eepp) }}</td>
+          <td>${{ "{:,.0f}".format(m.costo_caja_chica) }}</td>
+          <td>${{ "{:,.0f}".format(m.costo_combustible) }}</td>
+          <td style="color:{{ '#1e8449' if m.resultado >= 0 else '#c0392b' }}">${{ "{:,.0f}".format(m.resultado) }}</td>
+          <td>{{ "%.1f"|format(m.margen_pct) + '%' if m.margen_pct is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.76rem;color:var(--ink-muted);margin-top:10px">Materiales queda fuera del costo hasta tener integración con Defontana (ver módulo Materiales).</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Pipeline de datos</h2>
+  <div class="sub">Urjta-Cobranza · seguimiento.parquet + eepp_final.csv</div>
+  {% if pipeline_disponible %}
+  <div style="background:var(--good-bg);color:var(--good);padding:12px 14px;border-radius:8px;font-size:.85rem">✅ Pipeline disponible y unido — Cortes, Repos, Visitas, Improcedencias e Ingreso EEPP por período.</div>
+  {% else %}
+  <div style="background:var(--warn-bg);color:var(--warn);padding:12px 14px;border-radius:8px;font-size:.85rem">⚠️ No se encontró el pipeline — revisa que haya corrido.</div>
+  {% endif %}
+</div>
+
+<div class="panel placeholder-card">
+  <b>Reportería contractual completa (SLA, Efectividad detallada, Improcedencias por responsable)</b><br>
+  Vive en el dashboard propio de Urjta-Cobranza, para no duplicar — enlace directo pendiente de publicar.
+</div>
+
+{% endblock %}

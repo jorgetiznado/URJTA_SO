@@ -1,104 +1,66 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Materiales — Admin URJTA</title>
-  <meta name="theme-color" content="#8e44ad">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
-    header{background:#8e44ad;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
-    header a{color:#fff;text-decoration:none;font-size:1.3rem}
-    header h1{font-size:1.1rem;flex:1}
-    .container{max-width:900px;margin:0 auto;padding:16px}
-    .card{background:#fff;border-radius:8px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-    .card h2{font-size:.95rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-    .upload-error{background:#fde8e8;color:#e5231d;padding:14px 16px;border-radius:8px;margin-bottom:14px;font-size:.88rem;font-weight:bold}
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-    .stat{background:#f8f9fa;border-radius:8px;padding:14px;text-align:center}
-    .stat .num{font-size:2rem;font-weight:bold;color:#8e44ad}
-    .stat .lbl{font-size:.72rem;color:#888;margin-top:4px}
-    .upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-    input[type=file]{padding:8px;border:1px solid #ccc;border-radius:5px;font-size:.88rem;flex:1;min-width:200px}
-    .btn{padding:9px 18px;border:none;border-radius:5px;cursor:pointer;font-size:.88rem;font-weight:bold}
-    .btn-upload{background:#8e44ad;color:#fff}
-    .btn-dl{padding:10px 18px;border-radius:6px;text-decoration:none;font-size:.88rem;font-weight:bold;display:inline-block;margin-right:8px;margin-bottom:8px;background:#8e44ad;color:#fff}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
-    th{background:#8e44ad;color:#fff;padding:9px 8px;text-align:left}
-    td{padding:8px;border-bottom:1px solid #eee}
-    .empty{text-align:center;padding:20px;color:#bbb;font-size:.9rem}
-    .alert-ok{background:#e8f5e9;color:#1e8449;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .alert-warn{background:#fff3e0;color:#b7770d;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:8px}
-    .scroll{overflow-x:auto}
-  </style>
-</head>
-<body>
-<header>
-  <a href="/admin">←</a>
-  <h1>🔧 Materiales</h1>
-</header>
+{% extends "admin_base.html" %}
+{% block title %}Materiales — Admin URJTA{% endblock %}
+{% block accent %}#8e44ad{% endblock %}
+{% block accent_bg %}#f1e6f7{% endblock %}
+{% block crumbs %}Operaciones{% endblock %}
+{% block page_title %}Materiales{% endblock %}
 
-<div class="container">
+{% block content %}
+{% if error %}
+<div class="upload-error">⚠️ {{ error }}</div>
+{% endif %}
 
-  {% if error %}
-  <div class="upload-error">⚠️ {{ error }}</div>
-  {% endif %}
-
-  <div class="card">
-    <h2>📊 Resumen</h2>
-    <div class="stats-grid">
-      <div class="stat">
-        <div class="num">{{ stats.total_mat_usados }}</div>
-        <div class="lbl">Registros de uso</div>
-      </div>
-    </div>
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="lbl">Registros de uso</div>
+    <div class="val">{{ stats.total_mat_usados }}</div>
   </div>
-
-  <div class="card">
-    <h2>📂 Cargar catálogo de materiales</h2>
-    {% if stats.mat_cargado %}<div class="alert-ok">✅ CSV de materiales cargado</div>{% else %}<div class="alert-warn">⚠️ Sin CSV de materiales</div>{% endif %}
-    <form action="/subir-materiales" method="POST" enctype="multipart/form-data">
-      <div class="upload-row">
-        <input type="file" name="csv" accept=".csv" required>
-        <button type="submit" class="btn btn-upload">⬆ Cargar</button>
-      </div>
-    </form>
-    <p style="font-size:.78rem;color:#999;margin-top:6px">Columnas: <code>CODIGO;NOMBRE;UNIDAD</code></p>
-  </div>
-
-  <div class="card">
-    <h2>⬇ Descargar datos</h2>
-    <a href="/descargar/materiales-usados" class="btn-dl">🔧 Materiales usados</a>
-  </div>
-
-  <div class="card">
-    <h2>🕐 Últimos registros</h2>
-    {% if ultimos_mat %}
-    <div class="scroll">
-      <table>
-        <thead>
-          <tr><th>Fecha</th><th>ID</th><th>Acción</th><th>Operador</th><th>Materiales</th><th>Fotos</th></tr>
-        </thead>
-        <tbody>
-          {% for r in ultimos_mat %}
-          <tr>
-            <td>{{ r.FECHA_REGISTRO }}</td>
-            <td><strong>{{ r.ID_SERVICIO }}</strong></td>
-            <td>{{ r.TIPO_ACCION }}</td>
-            <td>{{ r.OPERADOR }}</td>
-            <td style="font-size:.75rem;max-width:200px;word-break:break-all">{{ r.MATERIALES }}</td>
-            <td>{{ r.CANT_FOTOS or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty">Sin registros de materiales aún.</p>
-    {% endif %}
-  </div>
-
 </div>
-</body>
-</html>
+
+<div class="panel placeholder-card">
+  <b>Integración con Defontana — pendiente</b><br>
+  El uso de materiales acá registrado (con foto de respaldo) sirve para <b>justificar en terreno</b>
+  el consumo que ya sale registrado en Defontana. La unión directa vía su API queda para una
+  próxima etapa — hoy este módulo documenta evidencia, no reemplaza el registro contable.
+</div>
+
+<div class="panel">
+  <h2>Cargar catálogo de materiales</h2>
+  <div class="sub">{% if stats.mat_cargado %}<span class="pill good">CSV cargado</span>{% else %}<span class="pill warn">sin CSV</span>{% endif %}</div>
+  <form action="/subir-materiales" method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <input type="file" name="csv" accept=".csv" required>
+    <button type="submit" class="btn btn-accent" style="background:#8e44ad">Cargar</button>
+  </form>
+  <p style="font-size:.78rem;color:var(--ink-muted)">Columnas: <code>CODIGO;NOMBRE;UNIDAD</code></p>
+</div>
+
+<div class="panel">
+  <h2>Descargar datos</h2>
+  <a href="/descargar/materiales-usados" class="btn" style="background:#8e44ad;color:#fff;border:none">Materiales usados</a>
+</div>
+
+<div class="panel">
+  <h2>Últimos registros</h2>
+  {% if ultimos_mat %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>ID</th><th>Acción</th><th>Operador</th><th>Materiales</th><th>Fotos</th></tr></thead>
+      <tbody>
+        {% for r in ultimos_mat %}
+        <tr>
+          <td>{{ r.FECHA_REGISTRO }}</td>
+          <td><strong>{{ r.ID_SERVICIO }}</strong></td>
+          <td>{{ r.TIPO_ACCION }}</td>
+          <td>{{ r.OPERADOR }}</td>
+          <td style="font-size:.75rem;max-width:200px;word-break:break-all">{{ r.MATERIALES }}</td>
+          <td>{{ r.CANT_FOTOS or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin registros de materiales aún.</p>
+  {% endif %}
+</div>
+{% endblock %}
