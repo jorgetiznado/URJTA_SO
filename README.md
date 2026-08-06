@@ -23,7 +23,7 @@ Ver [docs/PLAN_FORMALIZACION.md](docs/PLAN_FORMALIZACION.md) para el plan de tra
 - `app.py` — aplicación Flask (rutas, lógica de negocio)
 - `sync_pipeline.py` — ingesta desde el pipeline de datos real (Urjta-Cobranza)
 - `templates/` — vistas HTML (Jinja2)
-- `Static/` — logo, íconos, manifest PWA
+- `static/` — logo, íconos, manifest PWA
 - `docs/` — documentación del proyecto
 - `data/`, `fotos/` — **no versionados**, datos reales solo en el servidor de producción
 

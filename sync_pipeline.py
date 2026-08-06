@@ -16,10 +16,15 @@ sin RESPONSABLE asignado son responsabilidad de back office (Danna Peralta / Rod
 Bravo) — quedan en la lista con OPERADOR vacío, visibles solo para roles que ven todo.
 """
 
+import os
+
 import pandas as pd
 
-PARQUET_PATH = r"C:\BD\SGC\Salidas\seguimiento.parquet"
-EEPP_PATH    = r"C:\BD\SGC\Salidas\eepp_final.csv"
+# Salidas del pipeline Urjta-Cobranza. El default es la ruta del PC de producción;
+# URJTA_PIPELINE_DIR permite apuntar a otra carpeta al correr fuera de ese equipo.
+_PIPELINE_DIR = os.environ.get('URJTA_PIPELINE_DIR', r"C:\BD\SGC\Salidas")
+PARQUET_PATH = os.path.join(_PIPELINE_DIR, "seguimiento.parquet")
+EEPP_PATH    = os.path.join(_PIPELINE_DIR, "eepp_final.csv")
 
 COLUMNAS_CLIENTES = [
     'ID_SERVICIO', 'FECHA_CORTE', 'DEUDA', 'ANTIGUEDAD',

@@ -26,8 +26,11 @@ _cargar_env()
 app = Flask(__name__)
 app.secret_key = os.environ['URJTA_SECRET_KEY']
 
-DATA_FOLDER          = r'C:\SERVER\data'
-FOTOS_FOLDER         = r'C:\SERVER\fotos'
+# Rutas de datos y fotos. El default es el servidor de producción (PC de URJTA);
+# se pueden apuntar a otra parte con URJTA_DATA_DIR / URJTA_FOTOS_DIR para correr
+# la app en otro equipo (Linux, servidor, entorno de prueba) sin tocar el código.
+DATA_FOLDER          = os.environ.get('URJTA_DATA_DIR',  r'C:\SERVER\data')
+FOTOS_FOLDER         = os.environ.get('URJTA_FOTOS_DIR', r'C:\SERVER\fotos')
 CSV_PATH             = os.path.join(DATA_FOLDER, 'clientes.csv')
 RESULTADOS_PATH      = os.path.join(DATA_FOLDER, 'resultados.csv')
 MATERIALES_PATH      = os.path.join(DATA_FOLDER, 'materiales.csv')
