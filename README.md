@@ -7,7 +7,7 @@ Ver [docs/PLAN_FORMALIZACION.md](docs/PLAN_FORMALIZACION.md) para el plan de tra
 
 ## Requisitos
 
-- Python 3.14+
+- Python 3.11 o superior (producción corre 3.14; verificado también en 3.11)
 - `pip install -r requirements.txt`
 
 ## Configuración local
