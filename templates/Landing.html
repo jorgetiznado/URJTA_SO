@@ -33,6 +33,8 @@
     .role-card.geo h2{color:#0f69be}
     .role-card.cajachica{border-top:4px solid #0f8a7e}
     .role-card.cajachica h2{color:#0f8a7e}
+    .role-card.asistencia{border-top:4px solid #c2185b}
+    .role-card.asistencia h2{color:#c2185b}
     .role-card.admin{border-top:4px solid #e67e22;grid-column:1/-1}
     .role-card.admin h2{color:#e67e22}
     .version{color:#a9825e;font-size:.75rem;margin-top:32px;opacity:.8}
@@ -76,6 +78,11 @@
       <span class="icon">🗺️</span>
       <h2>Buscar Geo</h2>
       <p>Coordenadas UTM y GPS por N° de servicio</p>
+    </a>
+    <a href="/asistencia" class="role-card asistencia">
+      <span class="icon">🕒</span>
+      <h2>Asistencia</h2>
+      <p>Marcar entrada y salida escaneando el QR de jornada</p>
     </a>
     {% if not usuario or usuario.cargo == 'ADMINISTRADOR DE CONTRATO' or usuario.cargo in ['DIRECCION', 'GERENCIA'] %}
     <a href="/caja-chica" class="role-card cajachica">

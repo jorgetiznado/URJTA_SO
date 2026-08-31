@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR de jornada — URJTA</title>
+  <meta name="theme-color" content="#241a10">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#241a10;color:#e8d9c4;min-height:100vh;display:flex;flex-direction:column}
+    header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+    header a{color:#8a7864;text-decoration:none;font-size:1.2rem}
+    header .logo{height:26px;width:26px;border-radius:6px;background:#fff;object-fit:cover}
+    header h1{font-size:.9rem;font-weight:600;flex:1;color:#fff}
+    header select{background:#3a2c1c;color:#e8d9c4;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;font-size:.82rem}
+    main{flex:1;display:flex;flex-wrap:wrap;gap:24px;padding:24px;align-items:flex-start;justify-content:center}
+    .qr-zona{background:#fff;border-radius:20px;padding:22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    .qr-zona img{display:block;width:min(66vw,420px);height:auto;image-rendering:pixelated}
+    .punto{color:#241a10;font-size:1.15rem;font-weight:700;margin-top:14px}
+    .instruccion{color:#6b5d4f;font-size:.85rem;margin-top:4px}
+    .barra{height:6px;background:#eee;border-radius:3px;margin-top:16px;overflow:hidden}
+    .barra span{display:block;height:100%;background:#c2185b;width:100%;transition:width 1s linear}
+    .caduca{color:#a3927e;font-size:.72rem;margin-top:8px}
+    aside{flex:1;min-width:270px;max-width:420px;display:flex;flex-direction:column;gap:16px}
+    .panel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 18px}
+    .panel h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:#8a7864;margin-bottom:12px;font-weight:600}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+    .kpis .val{font-size:1.7rem;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+    .kpis .lbl{font-size:.66rem;color:#8a7864;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+    .lista{display:flex;flex-direction:column;gap:2px}
+    .lista .fila{display:flex;justify-content:space-between;align-items:center;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem}
+    .lista .fila:last-child{border-bottom:none}
+    .lista .hora{font-family:ui-monospace,monospace;color:#a3927e;margin-right:10px}
+    .tag{font-size:.64rem;font-weight:700;padding:2px 8px;border-radius:10px}
+    .tag.ENTRADA{background:#1e8449;color:#fff}
+    .tag.SALIDA{background:#0f69be;color:#fff}
+    .vacio{color:#8a7864;font-size:.84rem;text-align:center;padding:14px}
+    .acciones{display:flex;gap:10px;flex-wrap:wrap}
+    .acciones a{flex:1;min-width:130px;text-align:center;background:rgba(255,255,255,.07);color:#e8d9c4;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;text-decoration:none;font-size:.82rem;font-weight:600}
+    .nota{font-size:.75rem;color:#8a7864;line-height:1.6}
+    @media(max-width:760px){main{padding:16px}.qr-zona img{width:78vw}}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/asistencia">←</a>
+  <img src="/static/logo-mark.png" class="logo" alt="">
+  <h1>QR de jornada</h1>
+  <select id="punto" onchange="location.href='/asistencia/qr?punto=' + encodeURIComponent(this.value)">
+    {% for p in puntos %}
+    <option value="{{ p }}" {{ 'selected' if p == punto else '' }}>{{ p }}</option>
+    {% endfor %}
+  </select>
+</header>
+
+<main>
+  <div class="qr-zona">
+    <img id="qr" src="/asistencia/qr.svg?punto={{ punto|urlencode }}" alt="Código QR de asistencia">
+    <div class="punto">📍 {{ punto }}</div>
+    <div class="instruccion">Escanea con la cámara de tu teléfono para marcar</div>
+    <div class="barra"><span id="barra"></span></div>
+    <div class="caduca">El código cambia cada {{ ventana }} segundos</div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <h2>Asistencia de hoy</h2>
+      <div class="kpis">
+        <div><div class="val" id="k-presentes">—</div><div class="lbl">Presentes</div></div>
+        <div><div class="val" id="k-ausentes">—</div><div class="lbl">Faltan</div></div>
+        <div><div class="val" id="k-atrasos">—</div><div class="lbl">Atrasos</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Últimos marcajes</h2>
+      <div class="lista" id="ultimas"><div class="vacio">Esperando marcajes…</div></div>
+    </div>
+
+    <div class="acciones">
+      <a href="/asistencia/escanear">📷 Escanear credenciales</a>
+      <a href="/admin/asistencia">📋 Nómina del día</a>
+    </div>
+
+    <div class="panel nota">
+      Deja esta pantalla abierta en el punto de reunión. El código se renueva solo:
+      una foto reenviada no sirve para marcar desde otro lugar.
+    </div>
+  </aside>
+</main>
+
+<script>
+  const VENTANA = {{ ventana }};
+  const punto = {{ punto|tojson }};
+  const barra = document.getElementById('barra');
+  const qr = document.getElementById('qr');
+
+  // Se renueva un poco antes de que venza, para que nadie alcance a escanear uno muerto.
+  const REFRESCO = Math.max(5, VENTANA - 5);
+  let restante = REFRESCO;
+
+  setInterval(() => {
+    restante -= 1;
+    barra.style.width = Math.max(0, (restante / REFRESCO) * 100) + '%';
+    if (restante <= 0) {
+      qr.src = '/asistencia/qr.svg?punto=' + encodeURIComponent(punto) + '&_=' + Date.now();
+      restante = REFRESCO;
+    }
+  }, 1000);
+
+  async function actualizarEstado() {
+    try {
+      const r = await fetch('/asistencia/qr/estado', { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('k-presentes').textContent = d.totales.presentes + '/' + d.totales.dotacion;
+      document.getElementById('k-ausentes').textContent = d.totales.ausentes;
+      document.getElementById('k-atrasos').textContent = d.totales.atrasos;
+
+      const lista = document.getElementById('ultimas');
+      if (!d.ultimas.length) {
+        lista.innerHTML = '<div class="vacio">Nadie ha marcado todavía hoy.</div>';
+        return;
+      }
+      lista.innerHTML = d.ultimas.map(m => `
+        <div class="fila">
+          <span><span class="hora">${m.hora}</span>${m.nombre}</span>
+          <span class="tag ${m.tipo}">${m.tipo}</span>
+        </div>`).join('');
+    } catch (e) { /* sin red: la pantalla del QR sigue sirviendo igual */ }
+  }
+  actualizarEstado();
+  setInterval(actualizarEstado, 8000);
+</script>
+</body>
+</html>

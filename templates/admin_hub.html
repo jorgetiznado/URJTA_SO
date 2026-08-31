@@ -24,6 +24,11 @@
     <div class="val">{% if stats.total_clientes > 0 %}{{ ((stats.total_gestionados / stats.total_clientes) * 100)|int }}%{% else %}—{% endif %}</div>
   </div>
   <div class="kpi">
+    <div class="lbl">Asistencia de hoy</div>
+    <div class="val">{{ stats.asistencia_presentes }}/{{ stats.asistencia_dotacion }}</div>
+    {% if stats.asistencia_ausentes > 0 %}<span class="delta warn">{{ stats.asistencia_ausentes }} sin marcar</span>{% endif %}
+  </div>
+  <div class="kpi">
     <div class="lbl">Caja chica por aprobar</div>
     <div class="val">{{ stats.cc_pendientes }}</div>
     {% if stats.cc_pendientes > 0 %}<span class="delta warn">requiere acción</span>{% endif %}
@@ -56,6 +61,11 @@
           <td><a href="/admin/operadores" style="color:var(--brand);font-weight:600;text-decoration:none">Operadores</a></td>
           <td>{% if stats.op_cargado %}<span class="pill good">cargado</span>{% else %}<span class="pill warn">sin CSV</span>{% endif %}</td>
           <td>roles y cargos</td>
+        </tr>
+        <tr>
+          <td><a href="/admin/asistencia" style="color:var(--brand);font-weight:600;text-decoration:none">Asistencia</a></td>
+          <td>{% if stats.asistencia_ausentes > 0 %}<span class="pill warn">{{ stats.asistencia_ausentes }} sin marcar</span>{% else %}<span class="pill good">al día</span>{% endif %}</td>
+          <td>nómina por QR de jornada</td>
         </tr>
         <tr>
           <td><a href="/admin/caja-chica" style="color:var(--brand);font-weight:600;text-decoration:none">Caja chica</a></td>

@@ -1,14 +1,15 @@
 # Sistema URJTA
 
 Aplicación web de terreno para URJTA Ingeniería & Servicios: revisión de cortes, materiales,
-combustible, búsqueda geo, y caja chica con flujo de solicitud/aprobación/rendición.
+combustible, búsqueda geo, caja chica con flujo de solicitud/aprobación/rendición, y nómina de
+asistencia por QR.
 
 Ver [docs/PLAN_FORMALIZACION.md](docs/PLAN_FORMALIZACION.md) para el plan de trabajo y alcance.
 
 ## Requisitos
 
 - Python 3.14+
-- `pip install flask pandas pillow pyarrow`
+- `pip install -r requirements.txt` (flask, pandas, pillow, pyarrow, segno)
 
 ## Configuración local
 
@@ -22,6 +23,8 @@ Ver [docs/PLAN_FORMALIZACION.md](docs/PLAN_FORMALIZACION.md) para el plan de tra
 
 - `app.py` — aplicación Flask (rutas, lógica de negocio)
 - `sync_pipeline.py` — ingesta desde el pipeline de datos real (Urjta-Cobranza)
+- `asistencia.py` — lógica de la nómina por QR (tokens firmados, cálculo de jornada)
+- `test_asistencia.py` — pruebas de esa lógica (`python test_asistencia.py`)
 - `templates/` — vistas HTML (Jinja2)
 - `Static/` — logo, íconos, manifest PWA
 - `docs/` — documentación del proyecto
@@ -31,10 +34,22 @@ Ver [docs/PLAN_FORMALIZACION.md](docs/PLAN_FORMALIZACION.md) para el plan de tra
 
 | Cargo | Acceso |
 |---|---|
-| OPERADOR | Terreno (Revisión Cortes, Materiales, Combustible, Geo) — solo lo propio |
-| ADMINISTRATIVO / SUPERVISOR | Terreno — todo |
-| ADMINISTRADOR DE CONTRATO | Terreno — todo, + Caja Chica (solo sus propias solicitudes) |
+| OPERADOR | Terreno (Revisión Cortes, Materiales, Combustible, Geo) — solo lo propio, + marcar su asistencia |
+| ADMINISTRATIVO / SUPERVISOR | Terreno — todo, + QR de jornada y nómina de asistencia |
+| ADMINISTRADOR DE CONTRATO | Terreno — todo, + Caja Chica (solo sus propias solicitudes), + asistencia |
 | DIRECCION / GERENCIA | Todo, + Caja Chica (todas las solicitudes) |
+
+## Módulos
+
+| Módulo | Ruta | Documentación |
+|---|---|---|
+| Revisión de Cortes | `/campo` | — |
+| Materiales | `/materiales` | — |
+| Combustible | `/combustible` | — |
+| Buscar Geo | `/geo` | — |
+| Caja Chica | `/caja-chica` | [ADMIN_COBRANZA_DISENO.md](docs/ADMIN_COBRANZA_DISENO.md) |
+| Asistencia (QR) | `/asistencia` | [ASISTENCIA_QR.md](docs/ASISTENCIA_QR.md) |
+| Administración | `/admin` | — |
 
 El panel `/admin` usa una contraseña separada (`URJTA_ADMIN_PASS`), independiente del login por
 rol — es la vista maestra de todos los módulos.

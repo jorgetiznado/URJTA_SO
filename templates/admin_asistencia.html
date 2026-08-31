@@ -1,0 +1,213 @@
+{% extends "admin_base.html" %}
+{% block title %}Asistencia — Admin URJTA{% endblock %}
+{% block accent %}#c2185b{% endblock %}
+{% block accent_bg %}#fce4ec{% endblock %}
+{% block crumbs %}Personal{% endblock %}
+{% block page_title %}Nómina de asistencia{% endblock %}
+{% block actions %}
+<a href="/asistencia/qr" class="btn btn-accent">📱 QR de jornada</a>
+<a href="/asistencia/credenciales" class="btn">🪪 Credenciales</a>
+<a href="/descargar/nomina-asistencia" class="btn">Descargar nómina</a>
+{% endblock %}
+
+{% block content %}
+
+{% if mensaje %}<div class="alert-ok">✓ {{ mensaje }}</div>{% endif %}
+{% if error %}<div class="upload-error">⚠️ {{ error }}</div>{% endif %}
+
+<div class="panel" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <form method="GET" action="/admin/asistencia" style="display:flex;gap:10px;align-items:center">
+    <label style="font-size:.78rem;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.05em">Día</label>
+    <input type="date" name="fecha" value="{{ fecha_iso }}" onchange="this.form.submit()"
+           style="padding:9px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.85rem">
+    <noscript><button class="btn">Ver</button></noscript>
+  </form>
+  <div style="font-size:.8rem;color:var(--ink-muted)">
+    {{ fecha }} ·
+    {% if es_dia_laboral %}día hábil{% else %}<span class="pill muted">día no laboral</span>{% endif %} ·
+    entrada {{ hora_entrada }} (tolerancia {{ tolerancia }} min)
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="lbl">Dotación</div>
+    <div class="val">{{ totales.dotacion }}</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Presentes</div>
+    <div class="val">{{ totales.presentes }}</div>
+    {% if totales.dotacion %}
+    <span class="delta {{ 'good' if totales.presentes == totales.dotacion else 'warn' }}">
+      {{ ((totales.presentes / totales.dotacion) * 100)|round|int }}% de la dotación
+    </span>
+    {% endif %}
+  </div>
+  <div class="kpi">
+    <div class="lbl">Atrasos</div>
+    <div class="val">{{ totales.atrasos }}</div>
+    {% if totales.atrasos %}<span class="delta warn">revisar</span>{% endif %}
+  </div>
+  <div class="kpi">
+    <div class="lbl">Ausentes sin justificar</div>
+    <div class="val">{{ totales.ausentes }}</div>
+    {% if totales.ausentes %}<span class="delta risk">requiere acción</span>{% endif %}
+  </div>
+  <div class="kpi">
+    <div class="lbl">Horas del día</div>
+    <div class="val">{{ totales.horas_total }}</div>
+    {% if totales.abiertas %}<span class="delta warn">{{ totales.abiertas }} sin marcar salida</span>{% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Nómina del {{ fecha }}</h2>
+  <div class="sub">Toda la dotación activa, marque o no. Se arma con los marcajes del día.</div>
+  {% if nomina %}
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Trabajador</th><th>Cargo</th><th>Entrada</th><th>Salida</th><th>Horas</th>
+            <th>Atraso</th><th>Marcas</th><th>Origen</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for f in nomina %}
+        <tr>
+          <td><strong>{{ f.NOMBRE }}</strong></td>
+          <td style="color:var(--ink-muted)">{{ f.CARGO or '—' }}</td>
+          <td>{{ f.ENTRADA or '—' }}</td>
+          <td>{{ f.SALIDA or ('en jornada' if f.JORNADA_ABIERTA else '—') }}</td>
+          <td>{{ f.HORAS or '—' }}</td>
+          <td>{% if f.ATRASO_MIN %}<span class="pill warn">+{{ f.ATRASO_MIN }} min</span>{% else %}—{% endif %}</td>
+          <td>{{ f.MARCAS }}</td>
+          <td style="color:var(--ink-muted);font-size:.74rem">{{ f.ORIGEN.replace('_', ' ') if f.ORIGEN else '—' }}</td>
+          <td>
+            {% if f.ESTADO == 'PRESENTE' %}<span class="pill good">PRESENTE</span>
+            {% elif f.ESTADO == 'ATRASO' %}<span class="pill warn">ATRASO</span>
+            {% elif f.ESTADO == 'AUSENTE' %}<span class="pill risk">AUSENTE</span>
+            {% elif f.ESTADO == 'JUSTIFICADO' %}<span class="pill muted">{{ f.MOTIVO or 'JUSTIFICADO' }}</span>
+            {% else %}<span class="pill muted">{{ f.ESTADO }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">
+    No hay dotación cargada. Sube <code>operadores.csv</code> en
+    <a href="/admin/operadores" style="color:var(--brand)">Operadores</a>.
+  </p>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+
+  <div class="panel">
+    <h2>Marcaje manual</h2>
+    <div class="sub">Cuando falló el teléfono o el QR. Queda marcado como MANUAL, con tu nombre.</div>
+    <form method="POST" action="/admin/asistencia/marcar-manual" style="display:flex;flex-direction:column;gap:10px">
+      <input type="hidden" name="fecha" value="{{ fecha_iso }}">
+      <select name="codigo" required>
+        <option value="">— Trabajador —</option>
+        {% for t in trabajadores %}<option value="{{ t.CODIGO }}">{{ t.NOMBRE }}</option>{% endfor %}
+      </select>
+      <div style="display:flex;gap:10px">
+        <select name="tipo" required style="flex:1">
+          <option value="ENTRADA">ENTRADA</option>
+          <option value="SALIDA">SALIDA</option>
+        </select>
+        <input type="time" name="hora" style="flex:1;padding:9px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.85rem">
+      </div>
+      <select name="punto">
+        {% for p in puntos %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+      </select>
+      <input type="text" name="observacion" required placeholder="Motivo (obligatorio)"
+             style="padding:9px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.85rem">
+      <button type="submit" class="btn btn-accent">Registrar marcaje</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Justificar ausencia</h2>
+    <div class="sub">Licencia, vacaciones o permiso: el trabajador deja de contar como ausente.</div>
+    <form method="POST" action="/admin/asistencia/justificar" style="display:flex;flex-direction:column;gap:10px">
+      <input type="hidden" name="fecha" value="{{ fecha_iso }}">
+      <select name="codigo" required>
+        <option value="">— Trabajador —</option>
+        {% for t in trabajadores %}<option value="{{ t.CODIGO }}">{{ t.NOMBRE }}</option>{% endfor %}
+      </select>
+      <select name="motivo" required>
+        <option value="">— Motivo —</option>
+        {% for m in motivos %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+      </select>
+      <input type="text" name="comentario" placeholder="Comentario (opcional)"
+             style="padding:9px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.85rem">
+      <button type="submit" class="btn btn-accent">Justificar</button>
+    </form>
+  </div>
+
+</div>
+
+<div class="panel">
+  <h2>Marcajes del día</h2>
+  <div class="sub">Registro crudo, en orden de llegada — es la evidencia de la nómina.</div>
+  {% if detalle %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Hora</th><th>Trabajador</th><th>Tipo</th><th>Origen</th><th>Punto</th><th>GPS</th><th>Registrado por</th><th>Observación</th></tr></thead>
+      <tbody>
+        {% for m in detalle %}
+        <tr>
+          <td><strong>{{ m.HORA[:5] }}</strong></td>
+          <td>{{ m.NOMBRE }}</td>
+          <td>{% if m.TIPO == 'ENTRADA' %}<span class="pill good">ENTRADA</span>{% else %}<span class="pill muted">SALIDA</span>{% endif %}</td>
+          <td style="font-size:.74rem;color:var(--ink-muted)">{{ m.ORIGEN.replace('_', ' ') }}</td>
+          <td>{{ m.PUNTO or '—' }}</td>
+          <td>
+            {% if m.LATITUD and m.LONGITUD %}
+            <a href="https://www.google.com/maps?q={{ m.LATITUD }},{{ m.LONGITUD }}" target="_blank"
+               style="color:var(--brand);text-decoration:none">ver mapa</a>
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:.74rem;color:var(--ink-muted)">{{ m.REGISTRADO_POR or '—' }}</td>
+          <td style="font-size:.74rem;color:var(--ink-muted);max-width:200px">{{ m.OBSERVACION or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin marcajes registrados este día.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Acumulado del mes</h2>
+  <div class="sub">Desde el día 1 hasta el {{ fecha }} — la base para cerrar remuneraciones.</div>
+  {% if resumen_mes %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Trabajador</th><th>Cargo</th><th>Días trabajados</th><th>Horas</th><th>Atrasos</th><th>Atraso acumulado</th><th>Ausencias</th><th>Justificadas</th></tr></thead>
+      <tbody>
+        {% for r in resumen_mes %}
+        <tr>
+          <td><strong>{{ r.NOMBRE }}</strong></td>
+          <td style="color:var(--ink-muted)">{{ r.CARGO or '—' }}</td>
+          <td>{{ r.DIAS }}</td>
+          <td>{{ r.HORAS or '—' }}</td>
+          <td>{% if r.ATRASOS %}<span class="pill warn">{{ r.ATRASOS }}</span>{% else %}0{% endif %}</td>
+          <td>{{ r.ATRASO_ACUM or '—' }}</td>
+          <td>{% if r.AUSENCIAS %}<span class="pill risk">{{ r.AUSENCIAS }}</span>{% else %}0{% endif %}</td>
+          <td>{{ r.JUSTIFICADAS }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin datos del mes todavía.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

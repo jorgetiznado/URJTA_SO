@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistencia — URJTA</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#c2185b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Asistencia">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#c2185b;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .user-bar{background:#fff;padding:8px 16px;font-size:.78rem;color:#666;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+    .user-bar a{color:#e5231d;text-decoration:none;font-weight:bold}
+    .container{max-width:640px;margin:0 auto;padding:12px}
+    .card{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.9rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+    .hoy{text-align:center;padding:6px 0 14px}
+    .hoy .fecha{font-size:.78rem;color:#999;text-transform:uppercase;letter-spacing:.05em}
+    .hoy .estado{font-size:1.5rem;font-weight:bold;margin-top:8px;color:#c2185b}
+    .hoy .horas{font-size:.85rem;color:#666;margin-top:6px}
+    .par{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    .par div{background:#fafafa;border-radius:8px;padding:12px;text-align:center}
+    .par .lbl{font-size:.7rem;color:#999;text-transform:uppercase;letter-spacing:.05em}
+    .par .val{font-size:1.3rem;font-weight:bold;margin-top:4px;color:#333}
+    .aviso{background:#fdf1de;color:#b7770d;border-radius:8px;padding:12px 14px;font-size:.85rem;line-height:1.5}
+    .marca{display:flex;justify-content:space-between;align-items:center;padding:10px 2px;border-bottom:1px solid #f2f2f2;font-size:.85rem}
+    .marca:last-child{border-bottom:none}
+    .marca .hora{font-weight:bold;font-family:ui-monospace,monospace}
+    .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.7rem;font-weight:bold}
+    .badge-ENTRADA{background:#e8f5e9;color:#1e8449}
+    .badge-SALIDA{background:#eaf3fb;color:#0f69be}
+    .badge-PRESENTE{background:#e8f5e9;color:#1e8449}
+    .badge-ATRASO{background:#fdf1de;color:#b7770d}
+    .badge-AUSENTE{background:#fde8e8;color:#e5231d}
+    .badge-JUSTIFICADO{background:#eef0f5;color:#5a6478}
+    .badge-NO.LABORAL{background:#f1f1f1;color:#999}
+    .origen{font-size:.68rem;color:#aaa;text-transform:uppercase}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    th{text-align:left;font-size:.68rem;text-transform:uppercase;color:#999;padding:6px 4px;border-bottom:1px solid #eee}
+    td{padding:8px 4px;border-bottom:1px solid #f4f4f4;font-variant-numeric:tabular-nums}
+    .btn{display:block;text-align:center;background:#c2185b;color:#fff;padding:14px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:.95rem;margin-top:10px}
+    .btn.sec{background:#fff;color:#c2185b;border:1px solid #c2185b}
+    .empty{text-align:center;padding:26px 20px;color:#aaa;font-size:.88rem}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>🕒 Asistencia</h1>
+</header>
+<div class="user-bar">
+  <span>👤 {{ usuario.nombre }} — {{ usuario.cargo }}</span>
+  <a href="/logout">Cerrar sesión</a>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="hoy">
+      <div class="fecha">{{ hoy }}</div>
+      <div class="estado">
+        {% if not marcas %}Sin marcar
+        {% elif resumen.JORNADA_ABIERTA %}En jornada
+        {% else %}Jornada cerrada{% endif %}
+      </div>
+      <div class="horas">
+        {% if resumen.HORAS %}{{ resumen.HORAS }} trabajadas hoy{% else %}Entrada de jornada: {{ hora_entrada }}{% endif %}
+      </div>
+    </div>
+
+    <div class="par">
+      <div>
+        <div class="lbl">Entrada</div>
+        <div class="val">{{ resumen.ENTRADA or '—' }}</div>
+      </div>
+      <div>
+        <div class="lbl">Salida</div>
+        <div class="val">{% if resumen.JORNADA_ABIERTA %}<span style="font-size:.9rem;color:#c2185b">en jornada</span>{% else %}{{ resumen.SALIDA or '—' }}{% endif %}</div>
+      </div>
+    </div>
+
+    <div class="aviso" style="margin-top:14px">
+      📷 Para marcar tu <strong>{{ siguiente|lower }}</strong>, escanea con la cámara de tu teléfono
+      el código QR que muestra el supervisor en el punto de reunión. El QR cambia cada 30 segundos:
+      sirve solo estando ahí.
+    </div>
+
+    {% if puede_gestionar %}
+    <a href="/asistencia/qr" class="btn">📱 Mostrar QR de jornada</a>
+    <a href="/admin/asistencia" class="btn sec">📋 Ver nómina del día</a>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>🕘 Mis marcajes de hoy</h2>
+    {% if marcas %}
+      {% for m in marcas %}
+      <div class="marca">
+        <div>
+          <span class="hora">{{ m.HORA[:5] }}</span>
+          <span class="badge badge-{{ m.TIPO }}" style="margin-left:8px">{{ m.TIPO }}</span>
+        </div>
+        <div style="text-align:right">
+          <div class="origen">{{ m.ORIGEN.replace('_',' ') }}</div>
+          {% if m.PUNTO %}<div class="origen">{{ m.PUNTO }}</div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty">Todavía no marcas hoy.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>📅 Mi mes</h2>
+    {% if historial %}
+    <table>
+      <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for f in historial %}
+        <tr>
+          <td>{{ f.FECHA[:5] }}</td>
+          <td>{{ f.ENTRADA or '—' }}</td>
+          <td>{{ f.SALIDA or '—' }}</td>
+          <td>{{ f.HORAS or '—' }}</td>
+          <td><span class="badge badge-{{ f.ESTADO.replace(' ','.') }}">{{ f.ESTADO }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Sin registros este mes.</div>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

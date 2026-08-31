@@ -63,6 +63,7 @@ externo distinto de URJTA.
 | Buscar Geo | ✅ Estable | Índice cacheado, 190k+ filas |
 | Caja Chica | ✅ Estable | Solicitud → aprobación → rendición con IVA |
 | Admin | ✅ Estable | Panel maestro, separado del login por rol |
+| Asistencia (QR) | 🆕 Listo para piloto | QR de jornada rotativo, credenciales, nómina diaria y mensual — ver `ASISTENCIA_QR.md` |
 | Base de datos real | ⏳ Pendiente | Migrar de CSV a SQLite |
 | Control de versiones | ⏳ Pendiente | Git init + disciplina de commits |
 | Ingesta de pipeline (parquet) | ⏳ Pendiente | Depende de revisar la carpeta de Jorge |

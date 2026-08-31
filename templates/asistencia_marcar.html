@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marcar asistencia — URJTA</title>
+  <meta name="theme-color" content="#c2185b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
+    header{background:#c2185b;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .container{max-width:480px;margin:0 auto;padding:16px}
+    .card{background:#fff;border-radius:12px;padding:22px 18px;box-shadow:0 1px 4px rgba(0,0,0,.1);text-align:center}
+    .quien{font-size:.78rem;color:#999;text-transform:uppercase;letter-spacing:.05em}
+    .nombre{font-size:1.2rem;font-weight:bold;margin:6px 0 2px;color:#333}
+    .cargo{font-size:.8rem;color:#888}
+    .punto{display:inline-block;background:#fce4ec;color:#c2185b;border-radius:20px;padding:6px 14px;font-size:.8rem;font-weight:bold;margin-top:14px}
+    .tipo{font-size:2rem;font-weight:bold;margin:22px 0 4px}
+    .tipo.ENTRADA{color:#1e8449}
+    .tipo.SALIDA{color:#0f69be}
+    .reloj{font-size:.85rem;color:#777;font-family:ui-monospace,monospace}
+    .btn{display:block;width:100%;padding:18px;border:none;border-radius:12px;color:#fff;font-size:1.1rem;font-weight:bold;margin-top:22px;cursor:pointer}
+    .btn.ENTRADA{background:#1e8449}
+    .btn.SALIDA{background:#0f69be}
+    .btn:active{opacity:.85}
+    .btn:disabled{background:#bbb}
+    .gps{font-size:.75rem;color:#888;margin-top:12px;min-height:1.1em}
+    .error{background:#fde8e8;color:#c0392b;border-radius:10px;padding:18px;font-size:.92rem;line-height:1.55}
+    .ok{background:#e8f5e9;border-radius:12px;padding:24px 18px}
+    .ok .tick{font-size:3rem}
+    .ok .msg{font-size:1.25rem;font-weight:bold;color:#1e8449;margin-top:6px}
+    .ok .hora{font-size:2rem;font-family:ui-monospace,monospace;font-weight:bold;color:#333;margin-top:10px}
+    .marcas{margin-top:16px;text-align:left;font-size:.84rem}
+    .marcas .fila{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid #f2f2f2}
+    .marcas .fila:last-child{border-bottom:none}
+    .links{margin-top:18px;display:flex;gap:10px}
+    .links a{flex:1;text-align:center;background:#fff;border:1px solid #ddd;color:#555;padding:12px;border-radius:10px;text-decoration:none;font-size:.85rem;font-weight:bold}
+    .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.7rem;font-weight:bold}
+    .badge-ENTRADA{background:#e8f5e9;color:#1e8449}
+    .badge-SALIDA{background:#eaf3fb;color:#0f69be}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/asistencia">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>🕒 Marcar asistencia</h1>
+</header>
+
+<div class="container">
+
+  {% if registrada %}
+  <div class="card">
+    <div class="ok">
+      <div class="tick">✅</div>
+      <div class="msg">{{ registrada.TIPO }} registrada</div>
+      <div class="hora">{{ registrada.HORA[:5] }}</div>
+      <div style="font-size:.82rem;color:#666;margin-top:8px">
+        {{ registrada.NOMBRE }}<br>{{ registrada.FECHA }}{% if registrada.PUNTO %} — {{ registrada.PUNTO }}{% endif %}
+      </div>
+    </div>
+    <div class="links">
+      <a href="/asistencia">Mi asistencia</a>
+      <a href="/">Inicio</a>
+    </div>
+  </div>
+
+  {% elif error %}
+  <div class="card">
+    <div class="error">
+      ⚠️ {{ error }}
+    </div>
+    <div class="links">
+      <a href="/asistencia">Mi asistencia</a>
+      <a href="/">Inicio</a>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="quien">Vas a marcar como</div>
+    <div class="nombre">{{ usuario.nombre }}</div>
+    <div class="cargo">{{ usuario.cargo }}</div>
+    <div class="punto">📍 {{ punto }}</div>
+
+    <div class="tipo {{ tipo }}">{{ tipo }}</div>
+    <div class="reloj" id="reloj"></div>
+
+    <form method="POST" action="/asistencia/marcar" id="form-marcar">
+      <input type="hidden" name="token" value="{{ token }}">
+      <input type="hidden" name="latitud" id="lat">
+      <input type="hidden" name="longitud" id="lng">
+      <button type="submit" class="btn {{ tipo }}" id="btn">Registrar {{ tipo|lower }}</button>
+    </form>
+    <div class="gps" id="gps">📡 Ubicación: obteniendo…</div>
+
+    {% if marcas %}
+    <div class="marcas">
+      {% for m in marcas %}
+      <div class="fila">
+        <span><strong>{{ m.HORA[:5] }}</strong></span>
+        <span class="badge badge-{{ m.TIPO }}">{{ m.TIPO }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  // Reloj de referencia (la hora que queda registrada es la del servidor).
+  const reloj = document.getElementById('reloj');
+  if (reloj) {
+    const tic = () => reloj.textContent = new Date().toLocaleTimeString('es-CL');
+    tic(); setInterval(tic, 1000);
+  }
+
+  // GPS de respaldo: si el trabajador no acepta el permiso, el marcaje igual se registra.
+  const gps = document.getElementById('gps');
+  if (gps && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('lng').value = pos.coords.longitude.toFixed(6);
+        gps.textContent = `📍 Ubicación registrada (±${Math.round(pos.coords.accuracy)} m)`;
+      },
+      () => { gps.textContent = '📡 Sin ubicación (se registra igual)'; },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  } else if (gps) {
+    gps.textContent = '📡 Sin GPS en este dispositivo';
+  }
+
+  // Evita el doble envío por doble toque.
+  const form = document.getElementById('form-marcar');
+  if (form) form.addEventListener('submit', () => {
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.textContent = 'Registrando…';
+  });
+</script>
+</body>
+</html>

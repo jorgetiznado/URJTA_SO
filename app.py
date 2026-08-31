@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, session
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from PIL import Image, ImageDraw, ImageFont
 import sync_pipeline
+import asistencia
 
 
 def _cargar_env(ruta='.env'):
@@ -36,6 +37,8 @@ MAT_USADOS_PATH      = os.path.join(DATA_FOLDER, 'materiales_usados.csv')
 COMBUSTIBLE_PATH     = os.path.join(DATA_FOLDER, 'combustible.csv')
 GEO_CATASTRO_PATH    = os.path.join(DATA_FOLDER, 'Geo_Catastro.csv')
 CAJA_CHICA_PATH      = os.path.join(DATA_FOLDER, 'caja_chica.csv')
+ASISTENCIA_PATH      = os.path.join(DATA_FOLDER, 'asistencia.csv')
+ASISTENCIA_JUSTIF_PATH = os.path.join(DATA_FOLDER, 'asistencia_justificaciones.csv')
 
 ADMIN_PASS  = os.environ['URJTA_ADMIN_PASS']
 USUARIO_PIN = os.environ['URJTA_USUARIO_PIN']
@@ -108,6 +111,29 @@ CAJA_CHICA_COLUMNS = [
     'MONTO_NETO', 'IVA', 'MONTO_TOTAL', 'FOTO_DOCUMENTO', 'FECHA_RENDICION',
     'LATITUD', 'LONGITUD',
 ]
+
+
+# ─── Asistencia (nómina por QR) ──────────────────────────────────────────────
+# Todo configurable por .env, para no tocar el código cuando cambie el horario o
+# se abra un punto de reunión nuevo.
+
+def _env_int(clave, defecto):
+    try:
+        return int(str(os.environ.get(clave, defecto)).strip())
+    except (TypeError, ValueError):
+        return defecto
+
+
+def _env_lista(clave, defecto):
+    return [x.strip() for x in str(os.environ.get(clave, defecto)).split(',') if x.strip()]
+
+
+ASISTENCIA_HORA_ENTRADA   = os.environ.get('URJTA_ASISTENCIA_HORA_ENTRADA', '08:30').strip()
+ASISTENCIA_TOLERANCIA_MIN = _env_int('URJTA_ASISTENCIA_TOLERANCIA_MIN', 10)
+ASISTENCIA_PUNTOS         = _env_lista('URJTA_ASISTENCIA_PUNTOS', 'BASE URJTA') or ['BASE URJTA']
+# Días hábiles: 1=lunes ... 7=domingo. Por defecto lunes a sábado.
+ASISTENCIA_DIAS_HABILES   = [int(d) for d in _env_lista('URJTA_ASISTENCIA_DIAS_HABILES', '1,2,3,4,5,6')
+                             if d.isdigit()] or [1, 2, 3, 4, 5, 6]
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -238,7 +264,8 @@ def login_requerido(vista):
     @wraps(vista)
     def envoltura(*args, **kwargs):
         if not session.get('user_codigo'):
-            return redirect(url_for('login', next=request.path))
+            # full_path conserva la query string (ej. el token del QR de asistencia)
+            return redirect(url_for('login', next=request.full_path.rstrip('?')))
         return vista(*args, **kwargs)
     return envoltura
 
@@ -289,6 +316,242 @@ def _next_caja_chica_id(df):
         return '1'
     return str(df['ID'].astype(int).max() + 1)
 
+
+
+# ─── Asistencia: lectura y escritura ─────────────────────────────────────────
+
+def _hoy():
+    return datetime.now().strftime(asistencia.FORMATO_FECHA)
+
+
+def get_asistencia():
+    """Todos los marcajes registrados (texto, sin conversiones)."""
+    if not os.path.exists(ASISTENCIA_PATH):
+        return pd.DataFrame(columns=asistencia.ASISTENCIA_COLUMNS)
+    df = read_csv_safe(ASISTENCIA_PATH)
+    if df is None:
+        return pd.DataFrame(columns=asistencia.ASISTENCIA_COLUMNS)
+    df = df.fillna('')
+    for col in asistencia.ASISTENCIA_COLUMNS:
+        if col not in df.columns:
+            df[col] = ''
+    return df[asistencia.ASISTENCIA_COLUMNS]
+
+
+def get_justificaciones():
+    if not os.path.exists(ASISTENCIA_JUSTIF_PATH):
+        return pd.DataFrame(columns=asistencia.JUSTIFICACION_COLUMNS)
+    df = read_csv_safe(ASISTENCIA_JUSTIF_PATH)
+    if df is None:
+        return pd.DataFrame(columns=asistencia.JUSTIFICACION_COLUMNS)
+    df = df.fillna('')
+    for col in asistencia.JUSTIFICACION_COLUMNS:
+        if col not in df.columns:
+            df[col] = ''
+    return df[asistencia.JUSTIFICACION_COLUMNS]
+
+
+def _agregar_fila_csv(path, fila, columnas):
+    """Agrega una fila al final del CSV sin releer ni reescribir el archivo completo.
+    Importa para la asistencia: varios trabajadores marcan al mismo tiempo en el
+    punto de reunión, y un ciclo leer-modificar-escribir perdería marcajes."""
+    df = pd.DataFrame([{col: fila.get(col, '') for col in columnas}])
+    if os.path.exists(path):
+        df.to_csv(path, mode='a', header=False, index=False, sep=';', encoding='utf-8')
+    else:
+        df.to_csv(path, index=False, sep=';', encoding='utf-8-sig')
+
+
+def trabajadores_activos():
+    """Dotación que debe aparecer en la nómina (los mismos que pueden iniciar sesión)."""
+    return get_operadores_login()
+
+
+def _trabajador_por_codigo(codigo):
+    for trabajador in get_operadores():
+        if str(trabajador.get('CODIGO', '')).strip() == str(codigo).strip():
+            return trabajador
+    return None
+
+
+def marcas_del_dia(fecha, codigo=None):
+    """Marcajes de una fecha ('dd/mm/aaaa'), opcionalmente de un solo trabajador."""
+    df = get_asistencia()
+    if df.empty:
+        return []
+    df = df[df['FECHA'].str.strip() == fecha]
+    if codigo is not None:
+        df = df[df['CODIGO'].str.strip() == str(codigo).strip()]
+    return df.to_dict('records')
+
+
+def puede_gestionar_asistencia():
+    """Quién ve el QR de jornada, escanea credenciales y revisa la nómina:
+    supervisión, Administrador de Contrato, Dirección/Gerencia — o la clave maestra."""
+    return bool(session.get('admin')) or puede_ver_todo(usuario_actual())
+
+
+def gestion_asistencia_requerida(vista):
+    @wraps(vista)
+    def envoltura(*args, **kwargs):
+        if puede_gestionar_asistencia():
+            return vista(*args, **kwargs)
+        if not session.get('user_codigo'):
+            return redirect(url_for('login', next=request.path))
+        return render_template('sin_permiso.html'), 403
+    return envoltura
+
+
+def registrar_marca(trabajador, origen, punto='', tipo=None, lat='', lon='',
+                    registrado_por='', observacion='', fecha=None, hora=None):
+    """Registra un marcaje. Devuelve `(fila, None)` o `(None, motivo)`.
+
+    La fecha y la hora las pone el servidor (el reloj del teléfono no es confiable);
+    solo el marcaje manual del supervisor puede fijarlas a mano.
+    """
+    ahora  = datetime.now()
+    fecha  = fecha or ahora.strftime(asistencia.FORMATO_FECHA)
+    hora   = hora or ahora.strftime(asistencia.FORMATO_HORA)
+    codigo = str(trabajador.get('CODIGO', '')).strip()
+
+    previas = marcas_del_dia(fecha, codigo)
+    tipo = tipo or asistencia.siguiente_tipo(previas)
+
+    if origen != asistencia.ORIGEN_MANUAL:
+        reciente = asistencia.marca_reciente(previas, hora)
+        if reciente:
+            return None, (f"Tu {reciente['TIPO'].lower()} de las {reciente['HORA'][:5]} ya quedó "
+                          f"registrada. Espera un momento antes de volver a marcar.")
+
+    fila = {
+        'ID':             f"{ahora.strftime('%Y%m%d%H%M%S%f')[:-3]}-{codigo}",
+        'FECHA':          fecha,
+        'HORA':           hora,
+        'TIPO':           tipo,
+        'CODIGO':         codigo,
+        'NOMBRE':         trabajador.get('NOMBRE', ''),
+        'CARGO':          str(trabajador.get('CARGO', '')).strip().upper(),
+        'ORIGEN':         origen,
+        'PUNTO':          punto,
+        'LATITUD':        lat,
+        'LONGITUD':       lon,
+        'REGISTRADO_POR': registrado_por,
+        'OBSERVACION':    observacion,
+    }
+    _agregar_fila_csv(ASISTENCIA_PATH, fila, asistencia.ASISTENCIA_COLUMNS)
+    return fila, None
+
+
+def _hubo_jornada(fecha, marcas):
+    """¿Ese día hubo jornada? Es día hábil y alguien marcó.
+
+    Un día hábil en que *nadie* marcó no es un día de 100% de ausencias: es un feriado,
+    un día sin faena, o el sistema todavía no estaba en uso. Contarle una falta a toda la
+    dotación ensuciaría el cierre de mes. La excepción es hoy: la nómina del día en curso
+    tiene que mostrar quién no ha marcado, que es justamente para lo que se mira.
+    """
+    if not asistencia.es_dia_laboral(fecha, ASISTENCIA_DIAS_HABILES):
+        return False
+    return bool(marcas) or fecha == _hoy()
+
+
+def nomina_del_dia(fecha):
+    """Nómina completa de un día + sus totales."""
+    marcas = marcas_del_dia(fecha)
+    nomina = asistencia.construir_nomina(
+        trabajadores_activos(),
+        marcas,
+        get_justificaciones().to_dict('records'),
+        fecha,
+        hora_entrada=ASISTENCIA_HORA_ENTRADA,
+        tolerancia_min=ASISTENCIA_TOLERANCIA_MIN,
+        dia_laboral=_hubo_jornada(fecha, marcas),
+    )
+    return nomina, asistencia.totales_nomina(nomina)
+
+
+def nomina_rango(desde, hasta):
+    """Nómina día por día entre dos fechas (inclusive), para exportar o resumir."""
+    try:
+        dia   = datetime.strptime(desde, asistencia.FORMATO_FECHA)
+        final = datetime.strptime(hasta, asistencia.FORMATO_FECHA)
+    except (ValueError, TypeError):
+        return []
+
+    trabajadores    = trabajadores_activos()
+    justificaciones = get_justificaciones().to_dict('records')
+    todas           = get_asistencia().to_dict('records')
+
+    por_fecha = {}
+    for marca in todas:
+        por_fecha.setdefault(str(marca.get('FECHA', '')).strip(), []).append(marca)
+
+    filas = []
+    while dia <= final:
+        fecha = dia.strftime(asistencia.FORMATO_FECHA)
+        filas.extend(asistencia.construir_nomina(
+            trabajadores, por_fecha.get(fecha, []), justificaciones, fecha,
+            hora_entrada=ASISTENCIA_HORA_ENTRADA,
+            tolerancia_min=ASISTENCIA_TOLERANCIA_MIN,
+            dia_laboral=_hubo_jornada(fecha, por_fecha.get(fecha)),
+        ))
+        dia += timedelta(days=1)
+    return filas
+
+
+def resumen_mensual(fecha_texto):
+    """Acumulado del mes hasta la fecha indicada: días trabajados, atrasos, ausencias
+    y horas por trabajador. Es lo que se ocupa para cerrar el mes."""
+    try:
+        referencia = datetime.strptime(fecha_texto, asistencia.FORMATO_FECHA)
+    except (ValueError, TypeError):
+        return []
+
+    primero = referencia.replace(day=1).strftime(asistencia.FORMATO_FECHA)
+    acumulado = {}
+    for fila in nomina_rango(primero, fecha_texto):
+        resumen = acumulado.setdefault(fila['CODIGO'], {
+            'CODIGO': fila['CODIGO'], 'NOMBRE': fila['NOMBRE'], 'CARGO': fila['CARGO'],
+            'DIAS': 0, 'ATRASOS': 0, 'AUSENCIAS': 0, 'JUSTIFICADAS': 0,
+            'MINUTOS': 0, 'MIN_ATRASO': 0,
+        })
+        if fila['ESTADO'] in (asistencia.ESTADO_PRESENTE, asistencia.ESTADO_ATRASO):
+            resumen['DIAS'] += 1
+        if fila['ESTADO'] == asistencia.ESTADO_ATRASO:
+            resumen['ATRASOS'] += 1
+        if fila['ESTADO'] == asistencia.ESTADO_AUSENTE:
+            resumen['AUSENCIAS'] += 1
+        if fila['ESTADO'] == asistencia.ESTADO_JUSTIFICADO:
+            resumen['JUSTIFICADAS'] += 1
+        resumen['MINUTOS']    += fila['MINUTOS']
+        resumen['MIN_ATRASO'] += fila['ATRASO_MIN']
+
+    filas = sorted(acumulado.values(), key=lambda r: str(r['NOMBRE']).upper())
+    for fila in filas:
+        fila['HORAS'] = asistencia.hhmm(fila['MINUTOS'])
+        fila['ATRASO_ACUM'] = asistencia.hhmm(fila['MIN_ATRASO'])
+    return filas
+
+
+def qr_svg(datos, escala=9, borde=2, incrustado=False):
+    """QR en SVG (nítido en cualquier pantalla y al imprimir). Devuelve `(svg, None)`,
+    o `(None, motivo)` si falta la librería en el servidor.
+
+    `incrustado=True` devuelve el SVG sin la cabecera XML, para pegarlo dentro del HTML
+    (la hoja de credenciales lleva decenas de QR y así se imprime en una sola página).
+    """
+    try:
+        import segno
+    except ImportError:
+        return None, ('Falta la librería para generar los QR. En el servidor de URJTA, '
+                      'corre: pip install segno')
+    codigo = segno.make(datos, error='m')
+    if incrustado:
+        return codigo.svg_inline(scale=escala, border=borde, dark='#1f1a16'), None
+    import io as _io
+    buffer = _io.BytesIO()
+    codigo.save(buffer, kind='svg', scale=escala, border=borde, dark='#1f1a16')
+    return buffer.getvalue().decode('utf-8'), None
 
 _geo_cache = {'mtime': None, 'index': {}}
 
@@ -428,6 +691,11 @@ def admin():
         'op_cargado':        os.path.exists(OPERADORES_PATH),
         'cc_pendientes':     len(df_cc[df_cc['ESTADO'] == 'PENDIENTE']),
     }
+
+    _, totales_hoy = nomina_del_dia(datetime.now().strftime(asistencia.FORMATO_FECHA))
+    stats['asistencia_presentes'] = totales_hoy['presentes']
+    stats['asistencia_dotacion']  = totales_hoy['dotacion']
+    stats['asistencia_ausentes']  = totales_hoy['ausentes']
 
     return render_template('admin_hub.html', stats=stats, error=request.args.get('error'),
                            active_module='inicio', usuario=usuario_actual())
@@ -1111,6 +1379,303 @@ def caja_chica_rendir(id_sol):
     return render_template('confirmacion_caja_chica.html', solicitud=solicitud)
 
 
+# ─── Asistencia (nómina por QR) ──────────────────────────────────────────────
+
+def _fecha_pedida():
+    """Fecha del parámetro `fecha` (dd/mm/aaaa o aaaa-mm-dd del input date). Hoy por defecto."""
+    valor = (request.args.get('fecha') or '').strip()
+    for formato in (asistencia.FORMATO_FECHA, '%Y-%m-%d'):
+        try:
+            return datetime.strptime(valor, formato).strftime(asistencia.FORMATO_FECHA)
+        except ValueError:
+            continue
+    return _hoy()
+
+
+@app.route('/asistencia')
+@login_requerido
+def asistencia_inicio():
+    """Lo que ve el trabajador: su estado de hoy y su historial del mes."""
+    usuario = usuario_actual()
+    hoy = _hoy()
+    mis_marcas = marcas_del_dia(hoy, usuario['codigo'])
+    resumen = asistencia.resumen_persona(mis_marcas, ASISTENCIA_HORA_ENTRADA, ASISTENCIA_TOLERANCIA_MIN)
+
+    primero = datetime.now().replace(day=1).strftime(asistencia.FORMATO_FECHA)
+    mi_historial = [f for f in nomina_rango(primero, hoy)
+                    if f['CODIGO'] == usuario['codigo'] and f['ESTADO'] != asistencia.ESTADO_NO_LABORAL]
+    mi_historial.reverse()
+
+    return render_template(
+        'asistencia.html',
+        usuario=usuario,
+        hoy=hoy,
+        marcas=sorted(mis_marcas, key=lambda m: m['HORA']),
+        siguiente=asistencia.siguiente_tipo(mis_marcas),
+        resumen=resumen,
+        historial=mi_historial,
+        hora_entrada=ASISTENCIA_HORA_ENTRADA,
+        puede_gestionar=puede_gestionar_asistencia(),
+    )
+
+
+@app.route('/asistencia/marcar')
+@login_requerido
+def asistencia_marcar_form():
+    """Pantalla que se abre al escanear el QR de jornada: confirma quién eres y qué marcas."""
+    usuario = usuario_actual()
+    token = request.args.get('t', '')
+    punto, error = asistencia.validar_token(token, app.secret_key)
+    mis_marcas = marcas_del_dia(_hoy(), usuario['codigo'])
+
+    return render_template(
+        'asistencia_marcar.html',
+        usuario=usuario, token=token, punto=punto, error=error,
+        tipo=asistencia.siguiente_tipo(mis_marcas),
+        marcas=sorted(mis_marcas, key=lambda m: m['HORA']),
+        registrada=None,
+    )
+
+
+@app.route('/asistencia/marcar', methods=['POST'])
+@login_requerido
+def asistencia_marcar():
+    usuario = usuario_actual()
+    token = request.form.get('token', '')
+    punto, error = asistencia.validar_token(token, app.secret_key)
+
+    fila = None
+    if not error:
+        trabajador = _trabajador_por_codigo(usuario['codigo']) or {
+            'CODIGO': usuario['codigo'], 'NOMBRE': usuario['nombre'], 'CARGO': usuario['cargo'],
+        }
+        fila, error = registrar_marca(
+            trabajador,
+            origen=asistencia.ORIGEN_QR,
+            punto=punto,
+            lat=request.form.get('latitud', ''),
+            lon=request.form.get('longitud', ''),
+        )
+
+    mis_marcas = marcas_del_dia(_hoy(), usuario['codigo'])
+    return render_template(
+        'asistencia_marcar.html',
+        usuario=usuario, token=token, punto=punto, error=error,
+        tipo=asistencia.siguiente_tipo(mis_marcas),
+        marcas=sorted(mis_marcas, key=lambda m: m['HORA']),
+        registrada=fila,
+    )
+
+
+@app.route('/asistencia/qr')
+@gestion_asistencia_requerida
+def asistencia_qr():
+    """Pantalla del punto de reunión: el QR que rota cada 30 segundos."""
+    punto = request.args.get('punto', ASISTENCIA_PUNTOS[0])
+    if punto not in ASISTENCIA_PUNTOS:
+        punto = ASISTENCIA_PUNTOS[0]
+    return render_template('asistencia_qr.html', punto=punto, puntos=ASISTENCIA_PUNTOS,
+                           ventana=asistencia.VENTANA_SEGUNDOS, usuario=usuario_actual())
+
+
+@app.route('/asistencia/qr.svg')
+@gestion_asistencia_requerida
+def asistencia_qr_svg():
+    """Imagen del QR vigente. La pantalla la recarga sola antes de que venza."""
+    punto = request.args.get('punto', ASISTENCIA_PUNTOS[0])
+    if punto not in ASISTENCIA_PUNTOS:
+        punto = ASISTENCIA_PUNTOS[0]
+    token = asistencia.token_jornada(punto, app.secret_key)
+    url = url_for('asistencia_marcar_form', t=token, _external=True)
+
+    svg, error = qr_svg(url, escala=11, borde=2)
+    if error:
+        return error, 503
+    return svg, 200, {'Content-Type': 'image/svg+xml',
+                      'Cache-Control': 'no-store, max-age=0'}
+
+
+@app.route('/asistencia/qr/estado')
+@gestion_asistencia_requerida
+def asistencia_qr_estado():
+    """Contador en vivo de la pantalla del QR: quién va marcando."""
+    hoy = _hoy()
+    nomina, totales = nomina_del_dia(hoy)
+    ultimas = sorted(marcas_del_dia(hoy), key=lambda m: m['HORA'], reverse=True)[:8]
+    return {
+        'totales': {'dotacion': totales['dotacion'], 'presentes': totales['presentes'],
+                    'ausentes': totales['ausentes'], 'atrasos': totales['atrasos']},
+        'ultimas': [{'hora': m['HORA'][:5], 'nombre': m['NOMBRE'], 'tipo': m['TIPO']}
+                    for m in ultimas],
+    }
+
+
+@app.route('/asistencia/escanear')
+@gestion_asistencia_requerida
+def asistencia_escanear():
+    """Modo supervisor: escanea la credencial del trabajador que no anda con teléfono."""
+    return render_template('asistencia_escanear.html',
+                           trabajadores=trabajadores_activos(),
+                           puntos=ASISTENCIA_PUNTOS,
+                           usuario=usuario_actual())
+
+
+@app.route('/asistencia/escanear/marcar', methods=['POST'])
+@gestion_asistencia_requerida
+def asistencia_escanear_marcar():
+    """Marca por credencial escaneada, o a mano eligiendo al trabajador de la lista."""
+    quien = usuario_actual()
+    registrado_por = quien['valor'] if quien else 'ADMIN'
+    datos = request.get_json(silent=True) or {}
+    punto = datos.get('punto', ASISTENCIA_PUNTOS[0])
+    contenido = (datos.get('contenido') or '').strip()
+
+    if contenido:
+        codigo, error = asistencia.validar_credencial(contenido, app.secret_key)
+        origen, observacion = asistencia.ORIGEN_CREDENCIAL, ''
+        if error:
+            return {'ok': False, 'error': error}
+    else:
+        codigo = (datos.get('codigo') or '').strip()
+        origen = asistencia.ORIGEN_MANUAL
+        observacion = (datos.get('observacion') or '').strip()
+        if not codigo:
+            return {'ok': False, 'error': 'Elige a un trabajador de la lista.'}
+        if not observacion:
+            return {'ok': False, 'error': 'El marcaje manual necesita un motivo.'}
+
+    trabajador = _trabajador_por_codigo(codigo)
+    if not trabajador:
+        return {'ok': False, 'error': f'El código {codigo} no está en la lista de operadores.'}
+
+    fila, error = registrar_marca(trabajador, origen=origen, punto=punto,
+                                  registrado_por=registrado_por, observacion=observacion)
+    if error:
+        return {'ok': False, 'error': error, 'nombre': trabajador.get('NOMBRE', '')}
+    return {'ok': True, 'nombre': fila['NOMBRE'], 'tipo': fila['TIPO'],
+            'hora': fila['HORA'][:5], 'origen': fila['ORIGEN']}
+
+
+@app.route('/asistencia/credenciales')
+@gestion_asistencia_requerida
+def asistencia_credenciales():
+    """Hoja imprimible con la credencial QR de cada trabajador activo."""
+    tarjetas, error = [], None
+    for trabajador in trabajadores_activos():
+        svg, error = qr_svg(asistencia.credencial_qr(trabajador['CODIGO'], app.secret_key),
+                            escala=5, borde=2, incrustado=True)
+        if error:
+            break
+        tarjetas.append({'nombre': trabajador.get('NOMBRE', ''),
+                         'codigo': trabajador.get('CODIGO', ''),
+                         'cargo':  trabajador.get('CARGO', ''),
+                         'svg':    svg})
+    return render_template('asistencia_credenciales.html', tarjetas=tarjetas, error=error)
+
+
+@app.route('/admin/asistencia')
+def admin_asistencia_panel():
+    """La nómina: todos los trabajadores del día, marquen o no."""
+    if not puede_gestionar_asistencia():
+        if not session.get('user_codigo') and not session.get('admin'):
+            return redirect(url_for('login', next=request.path))
+        return render_template('sin_permiso.html'), 403
+
+    fecha = _fecha_pedida()
+    nomina, totales = nomina_del_dia(fecha)
+    detalle = sorted(marcas_del_dia(fecha), key=lambda m: m['HORA'])
+
+    return render_template(
+        'admin_asistencia.html',
+        fecha=fecha,
+        fecha_iso=datetime.strptime(fecha, asistencia.FORMATO_FECHA).strftime('%Y-%m-%d'),
+        es_dia_laboral=asistencia.es_dia_laboral(fecha, ASISTENCIA_DIAS_HABILES),
+        nomina=nomina, totales=totales, detalle=detalle,
+        resumen_mes=resumen_mensual(fecha),
+        trabajadores=trabajadores_activos(),
+        motivos=asistencia.MOTIVOS_JUSTIFICACION,
+        puntos=ASISTENCIA_PUNTOS,
+        hora_entrada=ASISTENCIA_HORA_ENTRADA,
+        tolerancia=ASISTENCIA_TOLERANCIA_MIN,
+        mensaje=request.args.get('mensaje'), error=request.args.get('error'),
+        active_module='asistencia', usuario=usuario_actual(),
+    )
+
+
+@app.route('/admin/asistencia/marcar-manual', methods=['POST'])
+def admin_asistencia_marcar_manual():
+    """Marcaje a mano cuando algo falló en terreno (teléfono sin batería, sin señal).
+    Queda registrado como MANUAL y con el nombre de quien lo hizo."""
+    if not puede_gestionar_asistencia():
+        return render_template('sin_permiso.html'), 403
+
+    quien = usuario_actual()
+    fecha = (request.form.get('fecha') or _hoy()).strip()
+    try:
+        fecha = datetime.strptime(fecha, '%Y-%m-%d').strftime(asistencia.FORMATO_FECHA)
+    except ValueError:
+        pass
+
+    trabajador = _trabajador_por_codigo(request.form.get('codigo', ''))
+    if not trabajador:
+        return redirect(url_for('admin_asistencia_panel', fecha=fecha,
+                                error='No se encontró al trabajador.'))
+
+    hora = (request.form.get('hora') or '').strip()
+    observacion = (request.form.get('observacion') or '').strip()
+    if not observacion:
+        return redirect(url_for('admin_asistencia_panel', fecha=fecha,
+                                error='El marcaje manual necesita un motivo.'))
+
+    fila, error = registrar_marca(
+        trabajador,
+        origen=asistencia.ORIGEN_MANUAL,
+        punto=request.form.get('punto', ''),
+        tipo=request.form.get('tipo') or None,
+        registrado_por=quien['valor'] if quien else 'ADMIN',
+        observacion=observacion,
+        fecha=fecha,
+        hora=f"{hora}:00" if len(hora) == 5 else (hora or None),
+    )
+    if error:
+        return redirect(url_for('admin_asistencia_panel', fecha=fecha, error=error))
+    return redirect(url_for('admin_asistencia_panel', fecha=fecha,
+                            mensaje=f"{fila['TIPO']} manual registrada para {fila['NOMBRE']}."))
+
+
+@app.route('/admin/asistencia/justificar', methods=['POST'])
+def admin_asistencia_justificar():
+    """Justifica la ausencia de un trabajador en una fecha (licencia, vacaciones, permiso)."""
+    if not puede_gestionar_asistencia():
+        return render_template('sin_permiso.html'), 403
+
+    quien = usuario_actual()
+    fecha = (request.form.get('fecha') or _hoy()).strip()
+    try:
+        fecha = datetime.strptime(fecha, '%Y-%m-%d').strftime(asistencia.FORMATO_FECHA)
+    except ValueError:
+        pass
+
+    trabajador = _trabajador_por_codigo(request.form.get('codigo', ''))
+    motivo = request.form.get('motivo', '')
+    if not trabajador or not motivo:
+        return redirect(url_for('admin_asistencia_panel', fecha=fecha,
+                                error='Falta el trabajador o el motivo.'))
+
+    _agregar_fila_csv(ASISTENCIA_JUSTIF_PATH, {
+        'FECHA':          fecha,
+        'CODIGO':         trabajador['CODIGO'],
+        'NOMBRE':         trabajador.get('NOMBRE', ''),
+        'MOTIVO':         motivo,
+        'COMENTARIO':     request.form.get('comentario', ''),
+        'REGISTRADO_POR': quien['valor'] if quien else 'ADMIN',
+        'FECHA_REGISTRO': datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+    }, asistencia.JUSTIFICACION_COLUMNS)
+
+    return redirect(url_for('admin_asistencia_panel', fecha=fecha,
+                            mensaje=f"Ausencia justificada: {trabajador.get('NOMBRE', '')} — {motivo}."))
+
+
 # ─── Descargas ───────────────────────────────────────────────────────────────
 
 @app.route('/descargar/resultados')
@@ -1178,6 +1743,68 @@ def descargar_caja_chica():
         return "Sin registros de caja chica aún.", 404
     return send_file(CAJA_CHICA_PATH, as_attachment=True,
                      download_name=f"caja_chica_{datetime.now().strftime('%Y%m%d')}.csv")
+
+
+@app.route('/descargar/asistencia')
+def descargar_asistencia():
+    """Marcajes en crudo (uno por escaneo), para auditoría."""
+    if not puede_gestionar_asistencia():
+        return render_template('sin_permiso.html'), 403
+    if not os.path.exists(ASISTENCIA_PATH):
+        return "Sin marcajes de asistencia aún.", 404
+    return send_file(ASISTENCIA_PATH, as_attachment=True,
+                     download_name=f"asistencia_{datetime.now().strftime('%Y%m%d')}.csv")
+
+
+@app.route('/descargar/nomina-asistencia')
+def descargar_nomina_asistencia():
+    """La nómina consolidada — una fila por trabajador y día, con horas y estado.
+    Es el archivo que se ocupa para cerrar el mes (remuneraciones)."""
+    if not puede_gestionar_asistencia():
+        return render_template('sin_permiso.html'), 403
+
+    hoy = datetime.now()
+    desde = (request.args.get('desde') or hoy.replace(day=1).strftime(asistencia.FORMATO_FECHA)).strip()
+    hasta = (request.args.get('hasta') or hoy.strftime(asistencia.FORMATO_FECHA)).strip()
+    for formato in ('%Y-%m-%d',):
+        for nombre, valor in (('desde', desde), ('hasta', hasta)):
+            try:
+                convertida = datetime.strptime(valor, formato).strftime(asistencia.FORMATO_FECHA)
+                if nombre == 'desde':
+                    desde = convertida
+                else:
+                    hasta = convertida
+            except ValueError:
+                pass
+
+    filas = nomina_rango(desde, hasta)
+    if not filas:
+        return "Rango de fechas inválido o sin dotación cargada.", 404
+
+    salida = pd.DataFrame([{
+        'FECHA':          f['FECHA'],
+        'CODIGO':         f['CODIGO'],
+        'NOMBRE':         f['NOMBRE'],
+        'CARGO':          f['CARGO'],
+        'ENTRADA':        f['ENTRADA'],
+        'SALIDA':         f['SALIDA'],
+        'HORAS':          f['HORAS'],
+        'MINUTOS':        f['MINUTOS'],
+        'ESTADO':         f['ESTADO'],
+        'ATRASO_MIN':     f['ATRASO_MIN'],
+        'MARCAS':         f['MARCAS'],
+        'ORIGEN_ENTRADA': f['ORIGEN'],
+        'MOTIVO':         f['MOTIVO'],
+        'COMENTARIO':     f['COMENTARIO'],
+    } for f in filas])
+
+    # Se arma en memoria: no deja archivos temporales sueltos ni se pisa a sí mismo
+    # si dos personas descargan la nómina al mismo tiempo.
+    import io
+    buffer = io.BytesIO(salida.to_csv(index=False, sep=';').encode('utf-8-sig'))
+    return send_file(buffer, as_attachment=True, mimetype='text/csv',
+                     download_name=f"nomina_asistencia_{desde.replace('/', '-')}_a_"
+                                   f"{hasta.replace('/', '-')}.csv")
 
 
 @app.route('/sw.js')

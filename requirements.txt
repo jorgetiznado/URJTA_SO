@@ -1,0 +1,6 @@
+# Dependencias del Sistema URJTA
+flask
+pandas
+pillow
+pyarrow          # lectura del pipeline de Urjta-Cobranza (seguimiento.parquet)
+segno            # generación de los QR de asistencia

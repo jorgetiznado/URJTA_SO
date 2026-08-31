@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escanear credenciales — URJTA</title>
+  <meta name="theme-color" content="#c2185b">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222}
+    header{background:#c2185b;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    header a{color:#fff;text-decoration:none;font-size:1.3rem}
+    header h1{font-size:1rem;flex:1}
+    .header-logo{height:30px;width:30px;object-fit:cover;border-radius:6px;background:#fff;flex-shrink:0}
+    .container{max-width:560px;margin:0 auto;padding:12px}
+    .card{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .card h2{font-size:.9rem;color:#5e2900;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+    label{font-size:.82rem;color:#555;font-weight:bold;display:block;margin-bottom:6px}
+    select,input[type=text]{width:100%;padding:12px 10px;border:1px solid #ccc;border-radius:8px;font-size:.95rem;background:#fff;-webkit-appearance:none}
+    .form-group{margin-bottom:14px}
+    #video{width:100%;border-radius:10px;background:#000;aspect-ratio:4/3;object-fit:cover}
+    .btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;font-weight:bold;cursor:pointer;color:#fff;background:#c2185b}
+    .btn.gris{background:#fff;color:#555;border:1px solid #ccc}
+    .btn:active{opacity:.85}
+    .estado{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:.9rem;line-height:1.5;display:none}
+    .estado.ok{display:block;background:#e8f5e9;color:#1e8449}
+    .estado.mal{display:block;background:#fde8e8;color:#c0392b}
+    .log{margin-top:6px;font-size:.85rem}
+    .log .fila{display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid #f2f2f2}
+    .log .fila:last-child{border-bottom:none}
+    .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.7rem;font-weight:bold}
+    .badge-ENTRADA{background:#e8f5e9;color:#1e8449}
+    .badge-SALIDA{background:#eaf3fb;color:#0f69be}
+    .aviso{background:#fdf1de;color:#b7770d;border-radius:8px;padding:12px 14px;font-size:.83rem;line-height:1.5}
+    .vacio{color:#aaa;font-size:.85rem;text-align:center;padding:16px}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/asistencia/qr">←</a>
+  <img src="/static/logo-mark.png" class="header-logo" alt="">
+  <h1>📷 Escanear credenciales</h1>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>📍 Punto de reunión</h2>
+    <select id="punto">
+      {% for p in puntos %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="card" id="card-camara">
+    <h2>📷 Cámara</h2>
+    <video id="video" playsinline muted></video>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn" id="btn-camara">Encender cámara</button>
+    </div>
+    <div class="estado" id="estado"></div>
+    <div class="aviso" id="aviso-camara" style="margin-top:12px;display:none">
+      Este navegador no puede leer QR por sí solo. Usa el registro manual de más abajo,
+      o pídele al trabajador que escanee el QR de jornada con su propio teléfono.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>✍️ Registro manual</h2>
+    <p class="aviso" style="margin-bottom:14px">
+      Solo cuando no se puede escanear (sin credencial, teléfono sin batería). Queda
+      registrado como <strong>MANUAL</strong> y a tu nombre.
+    </p>
+    <div class="form-group">
+      <label>Trabajador</label>
+      <select id="codigo">
+        <option value="">— Seleccionar —</option>
+        {% for t in trabajadores %}
+        <option value="{{ t.CODIGO }}">{{ t.NOMBRE }} — {{ t.CARGO }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Motivo del registro manual</label>
+      <input type="text" id="observacion" placeholder="Ej: sin credencial, marcó conmigo a las 08:10">
+    </div>
+    <button class="btn gris" id="btn-manual">Registrar marcaje manual</button>
+  </div>
+
+  <div class="card">
+    <h2>🕘 Marcajes de esta sesión</h2>
+    <div class="log" id="log"><div class="vacio">Aún no registras marcajes.</div></div>
+  </div>
+
+</div>
+
+<script>
+  const estado = document.getElementById('estado');
+  const log = document.getElementById('log');
+  let registros = [];
+  let ultimoContenido = '';
+  let ultimoInstante = 0;
+
+  function mostrar(texto, ok) {
+    estado.className = 'estado ' + (ok ? 'ok' : 'mal');
+    estado.textContent = texto;
+    if (navigator.vibrate) navigator.vibrate(ok ? 80 : [60, 60, 60]);
+  }
+
+  function pintarLog() {
+    if (!registros.length) { log.innerHTML = '<div class="vacio">Aún no registras marcajes.</div>'; return; }
+    log.innerHTML = registros.map(r => `
+      <div class="fila">
+        <span><strong>${r.hora}</strong> — ${r.nombre}</span>
+        <span class="badge badge-${r.tipo}">${r.tipo}</span>
+      </div>`).join('');
+  }
+
+  async function marcar(cuerpo) {
+    cuerpo.punto = document.getElementById('punto').value;
+    try {
+      const r = await fetch('/asistencia/escanear/marcar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cuerpo)
+      });
+      const d = await r.json();
+      if (d.ok) {
+        mostrar(`✅ ${d.nombre} — ${d.tipo} ${d.hora}`, true);
+        registros.unshift(d); pintarLog();
+      } else {
+        mostrar('⚠️ ' + d.error, false);
+      }
+    } catch (e) {
+      mostrar('⚠️ Sin conexión con el servidor. Reintenta.', false);
+    }
+  }
+
+  // ── Cámara + lector de QR nativo del navegador (sin librerías externas) ──
+  const video = document.getElementById('video');
+  const btnCamara = document.getElementById('btn-camara');
+  let detector = null, corriendo = false;
+
+  btnCamara.addEventListener('click', async () => {
+    if (!('BarcodeDetector' in window)) {
+      document.getElementById('aviso-camara').style.display = 'block';
+      mostrar('Este navegador no lee QR. Usa el registro manual.', false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }, audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      detector = new BarcodeDetector({ formats: ['qr_code'] });
+      corriendo = true;
+      btnCamara.textContent = 'Cámara encendida — apunta a la credencial';
+      btnCamara.disabled = true;
+      bucle();
+    } catch (e) {
+      mostrar('No se pudo abrir la cámara: ' + e.message, false);
+    }
+  });
+
+  async function bucle() {
+    if (!corriendo) return;
+    try {
+      const codigos = await detector.detect(video);
+      if (codigos.length) {
+        const contenido = codigos[0].rawValue;
+        const ahora = Date.now();
+        // No re-leer la misma credencial que sigue frente a la cámara.
+        if (contenido !== ultimoContenido || ahora - ultimoInstante > 4000) {
+          ultimoContenido = contenido; ultimoInstante = ahora;
+          await marcar({ contenido });
+        }
+      }
+    } catch (e) { /* cuadro ilegible: seguimos */ }
+    setTimeout(bucle, 400);
+  }
+
+  document.getElementById('btn-manual').addEventListener('click', () => {
+    const codigo = document.getElementById('codigo').value;
+    const observacion = document.getElementById('observacion').value.trim();
+    if (!codigo) { mostrar('Elige a un trabajador.', false); return; }
+    if (!observacion) { mostrar('Escribe el motivo del registro manual.', false); return; }
+    marcar({ codigo, observacion });
+    document.getElementById('codigo').value = '';
+    document.getElementById('observacion').value = '';
+  });
+</script>
+</body>
+</html>
