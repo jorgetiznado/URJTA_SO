@@ -35,7 +35,7 @@
 
 <div class="panel">
   <h2>Estado de Resultados (EERR)</h2>
-  <div class="sub">Ingresos (EEPP) − Costos (Caja chica + Combustible) · visible para Dirección/Gerencia y Administrador de Contrato</div>
+  <div class="sub">Ingresos (EEPP) − Costos (Caja chica + Combustible + Remuneraciones) · visible para Dirección/Gerencia y Administrador de Contrato</div>
 
   {% if not puede_ver_eerr %}
   <div class="lock">🔒 No tienes acceso a esta sección.</div>
@@ -76,7 +76,7 @@
   <div class="scroll">
     <table>
       <thead>
-        <tr><th>Período</th><th>Cortes</th><th>Repos</th><th>Visitas</th><th>Improc.</th><th>Ingreso EEPP</th><th>Costo CC</th><th>Costo comb.</th><th>Resultado</th><th>Margen</th></tr>
+        <tr><th>Período</th><th>Cortes</th><th>Repos</th><th>Visitas</th><th>Improc.</th><th>Ingreso EEPP</th><th>Costo CC</th><th>Costo comb.</th><th>Remuner.</th><th>Resultado</th><th>Margen</th></tr>
       </thead>
       <tbody>
         {% for m in eerr.meses %}
@@ -89,6 +89,7 @@
           <td>${{ "{:,.0f}".format(m.ingreso_eepp) }}</td>
           <td>${{ "{:,.0f}".format(m.costo_caja_chica) }}</td>
           <td>${{ "{:,.0f}".format(m.costo_combustible) }}</td>
+          <td>${{ "{:,.0f}".format(m.costo_remuneraciones) }}</td>
           <td style="color:{{ '#1e8449' if m.resultado >= 0 else '#c0392b' }}">${{ "{:,.0f}".format(m.resultado) }}</td>
           <td>{{ "%.1f"|format(m.margen_pct) + '%' if m.margen_pct is not none else '—' }}</td>
         </tr>
@@ -96,7 +97,7 @@
       </tbody>
     </table>
   </div>
-  <p style="font-size:.76rem;color:var(--ink-muted);margin-top:10px">Materiales queda fuera del costo hasta tener integración con Defontana (ver módulo Materiales).</p>
+  <p style="font-size:.76rem;color:var(--ink-muted);margin-top:10px">Remuneraciones = total haberes de las liquidaciones cargadas (sin aportes patronales); los meses sin liquidaciones cargadas aparecen en $0. Materiales queda fuera del costo hasta tener integración con Defontana (ver módulo Materiales).</p>
   {% endif %}
 </div>
 

@@ -17,3 +17,6 @@ __pycache__/
 
 # Configuración local del asistente (no aporta fuera de esta máquina)
 .claude/
+
+# Carpetas de trabajadores (liquidaciones, contratos): datos personales
+documentos/

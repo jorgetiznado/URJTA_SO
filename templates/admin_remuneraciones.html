@@ -1,0 +1,66 @@
+{% extends "admin_base.html" %}
+{% block title %}Remuneraciones — Admin URJTA{% endblock %}
+{% block accent %}#7d3c98{% endblock %}
+{% block accent_bg %}#f4ecf7{% endblock %}
+{% block crumbs %}Finanzas{% endblock %}
+{% block page_title %}Remuneraciones{% endblock %}
+
+{% block content %}
+{% if error %}<div class="lock">⚠️ {{ error }}</div>{% endif %}
+{% if ok %}<div style="background:var(--good-bg);color:var(--good);padding:12px 14px;border-radius:8px;font-size:.85rem;margin-bottom:14px">✅ {{ ok }}</div>{% endif %}
+
+<div class="kpi-row">
+  <div class="kpi"><div class="lbl">Trabajadores ({{ periodo or '—' }})</div><div class="val">{{ stats.trabajadores }}</div></div>
+  <div class="kpi"><div class="lbl">Total haberes (costo)</div><div class="val">${{ "{:,.0f}".format(stats.total_haberes) }}</div></div>
+  <div class="kpi"><div class="lbl">Líquido a pagar</div><div class="val">${{ "{:,.0f}".format(stats.total_liquido) }}</div></div>
+  <div class="kpi"><div class="lbl">Anticipos descontados</div><div class="val">${{ "{:,.0f}".format(stats.total_anticipos) }}</div></div>
+</div>
+
+<div class="panel">
+  <h2>Liquidaciones de sueldo</h2>
+  <div class="sub">Visible solo para Dirección/Gerencia y Administrador de Contrato · alimenta el costo del EERR en Cobranza</div>
+  {% if periodos|length > 1 %}
+  <form method="get" style="margin-bottom:10px">
+    <select name="periodo" onchange="this.form.submit()">
+      {% for p in periodos %}<option value="{{ p }}" {{ 'selected' if p == periodo else '' }}>{{ p }}</option>{% endfor %}
+    </select>
+  </form>
+  {% endif %}
+  {% if liquidaciones %}
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Nombre</th><th>Cargo</th><th>Base</th><th>Bonos</th><th>Gratif.</th><th>No imp.</th><th>Total haberes</th><th>Previsión + salud</th><th>Anticipos</th><th>Préstamos / ahorro</th><th>Líquido</th><th>PDF</th></tr></thead>
+      <tbody>
+        {% for l in liquidaciones %}
+        <tr>
+          <td>{{ l.NOMBRE }}<br><span style="font-size:.72rem;color:var(--ink-muted)">{{ l.RUT }}</span></td>
+          <td>{{ l.CARGO }}</td>
+          <td>${{ "{:,.0f}".format(l.SUELDO_BASE) }}</td>
+          <td>${{ "{:,.0f}".format(l.BONO_PRODUCCION + l.BONO_GESTION_PAGOS) }}</td>
+          <td>${{ "{:,.0f}".format(l.GRATIFICACION) }}</td>
+          <td>${{ "{:,.0f}".format(l.TOTAL_NO_IMPONIBLES) }}</td>
+          <td><strong>${{ "{:,.0f}".format(l.TOTAL_HABERES) }}</strong></td>
+          <td>${{ "{:,.0f}".format(l.AFP + l.SALUD + l.SEGURO_CESANTIA) }}<br><span style="font-size:.72rem;color:var(--ink-muted)">{{ l.AFP_NOMBRE }}</span></td>
+          <td>${{ "{:,.0f}".format(l.ANTICIPOS) }}</td>
+          <td>${{ "{:,.0f}".format(l.PRESTAMOS + l.AHORRO_VOLUNTARIO) }}</td>
+          <td><strong>${{ "{:,.0f}".format(l.LIQUIDO_A_PAGAR) }}</strong></td>
+          <td><a href="/admin/remuneraciones/pdf/{{ l.PERIODO }}/{{ l.RUT }}" target="_blank">Ver</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--ink-muted);text-align:center;padding:20px">Sin liquidaciones cargadas aún.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Cargar liquidaciones</h2>
+  <form action="/subir-remuneraciones" method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <input type="file" name="csv" accept=".csv" required>
+    <button type="submit" class="btn btn-accent" style="background:#7d3c98">Cargar</button>
+  </form>
+  <p style="font-size:.78rem;color:var(--ink-muted)">CSV separado por <code>;</code>. Agrega o actualiza por <code>PERIODO + RUT</code>, sin borrar otros meses. Columnas obligatorias: <code>PERIODO;RUT;NOMBRE;TOTAL_HABERES</code> (PERIODO formato AAAAMM). No se guardan datos bancarios.</p>
+</div>
+{% endblock %}

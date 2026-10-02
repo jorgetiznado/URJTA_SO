@@ -28,6 +28,7 @@ app.secret_key = os.environ['URJTA_SECRET_KEY']
 
 DATA_FOLDER          = r'C:\SERVER\data'
 FOTOS_FOLDER         = r'C:\SERVER\fotos'
+DOCUMENTOS_FOLDER    = r'C:\SERVER\documentos'  # una carpeta por trabajador: <RUT>_<NOMBRE>/liquidaciones/<AAAAMM>.pdf
 CSV_PATH             = os.path.join(DATA_FOLDER, 'clientes.csv')
 RESULTADOS_PATH      = os.path.join(DATA_FOLDER, 'resultados.csv')
 MATERIALES_PATH      = os.path.join(DATA_FOLDER, 'materiales.csv')
@@ -36,6 +37,7 @@ MAT_USADOS_PATH      = os.path.join(DATA_FOLDER, 'materiales_usados.csv')
 COMBUSTIBLE_PATH     = os.path.join(DATA_FOLDER, 'combustible.csv')
 GEO_CATASTRO_PATH    = os.path.join(DATA_FOLDER, 'Geo_Catastro.csv')
 CAJA_CHICA_PATH      = os.path.join(DATA_FOLDER, 'caja_chica.csv')
+REMUNERACIONES_PATH  = os.path.join(DATA_FOLDER, 'remuneraciones.csv')
 
 ADMIN_PASS  = os.environ['URJTA_ADMIN_PASS']
 USUARIO_PIN = os.environ['URJTA_USUARIO_PIN']
@@ -108,6 +110,18 @@ CAJA_CHICA_COLUMNS = [
     'MONTO_NETO', 'IVA', 'MONTO_TOTAL', 'FOTO_DOCUMENTO', 'FECHA_RENDICION',
     'LATITUD', 'LONGITUD',
 ]
+
+# Una fila por liquidación de sueldo (PERIODO + RUT es la clave). Sin datos bancarios a propósito.
+REMUNERACIONES_NUMERICAS = [
+    'SUELDO_BASE', 'DESCUENTO_INASISTENCIA', 'BONO_PRODUCCION', 'BONO_GESTION_PAGOS', 'GRATIFICACION',
+    'TOTAL_IMPONIBLES', 'COLACION', 'MOVILIZACION', 'AJUSTE', 'TOTAL_NO_IMPONIBLES', 'TOTAL_HABERES',
+    'AFP', 'SALUD', 'SEGURO_CESANTIA', 'ANTICIPOS', 'PRESTAMOS', 'AHORRO_VOLUNTARIO',
+    'TOTAL_DESCUENTOS', 'LIQUIDO_A_PAGAR',
+]
+REMUNERACIONES_COLUMNS = (
+    ['PERIODO', 'RUT', 'NOMBRE', 'CARGO', 'SECCION', 'FECHA_INGRESO', 'AFP_NOMBRE']
+    + REMUNERACIONES_NUMERICAS
+)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -278,6 +292,29 @@ def get_caja_chica():
         if col not in df.columns:
             df[col] = ''
     return df[CAJA_CHICA_COLUMNS]
+
+
+def get_remuneraciones():
+    """DataFrame de liquidaciones de sueldo (texto; los montos se convierten al calcular)."""
+    if not os.path.exists(REMUNERACIONES_PATH):
+        return pd.DataFrame(columns=REMUNERACIONES_COLUMNS)
+    df = pd.read_csv(REMUNERACIONES_PATH, dtype=str, sep=';', encoding='utf-8-sig').fillna('')
+    df.columns = df.columns.str.strip()
+    for col in REMUNERACIONES_COLUMNS:
+        if col not in df.columns:
+            df[col] = ''
+    return df[REMUNERACIONES_COLUMNS]
+
+
+def _remuneraciones_por_periodo():
+    """Costo de remuneraciones por período (suma de TOTAL_HABERES, bruto de la liquidación).
+    No incluye aportes patronales (cesantía empleador, SIS, mutual), que no vienen en la liquidación."""
+    df = get_remuneraciones()
+    if df.empty:
+        return pd.Series(dtype=float)
+    haberes = pd.to_numeric(df['TOTAL_HABERES'], errors='coerce').fillna(0)
+    periodo = pd.to_numeric(df['PERIODO'], errors='coerce').astype('Int64')
+    return haberes.groupby(periodo).sum()
 
 
 def guardar_caja_chica(df):
@@ -526,6 +563,90 @@ def admin_caja_chica_panel():
                            active_module='caja_chica', usuario=usuario_actual())
 
 
+def _acceso_remuneraciones():
+    """Dato sensible: mismo criterio que el EERR (Dirección/Gerencia + Admin. de Contrato, o clave admin)."""
+    return puede_ver_eerr()
+
+
+@app.route('/admin/remuneraciones')
+def admin_remuneraciones_panel():
+    if not _acceso_remuneraciones():
+        if not session.get('user_codigo') and not session.get('admin'):
+            return redirect(url_for('login', next=request.path))
+        return render_template('sin_permiso.html'), 403
+
+    df = get_remuneraciones()
+    for col in REMUNERACIONES_NUMERICAS:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    periodos = sorted(df['PERIODO'].unique().tolist(), reverse=True)
+    periodo = request.args.get('periodo') or (periodos[0] if periodos else None)
+    actual = df[df['PERIODO'] == periodo] if periodo else df.iloc[0:0]
+
+    stats = {
+        'trabajadores':    len(actual),
+        'total_haberes':   actual['TOTAL_HABERES'].sum(),
+        'total_liquido':   actual['LIQUIDO_A_PAGAR'].sum(),
+        'total_anticipos': actual['ANTICIPOS'].sum(),
+    }
+    return render_template('admin_remuneraciones.html', stats=stats, periodos=periodos,
+                           periodo=periodo, liquidaciones=actual.to_dict('records'),
+                           error=request.args.get('error'), ok=request.args.get('ok'),
+                           active_module='remuneraciones', usuario=usuario_actual())
+
+
+def carpeta_trabajador(rut, nombre):
+    """Carpeta de documentos de un trabajador, con la misma convención con que se archivan los PDF."""
+    return os.path.join(DOCUMENTOS_FOLDER, f"{rut}_{str(nombre).strip().replace(' ', '_')}", 'liquidaciones')
+
+
+@app.route('/admin/remuneraciones/pdf/<periodo>/<rut>')
+def admin_liquidacion_pdf(periodo, rut):
+    if not _acceso_remuneraciones():
+        return render_template('sin_permiso.html'), 403
+    df = get_remuneraciones()
+    fila = df[(df['PERIODO'] == periodo) & (df['RUT'] == rut)]
+    if fila.empty:
+        return 'Liquidación no encontrada', 404
+    ruta = os.path.join(carpeta_trabajador(rut, fila.iloc[0]['NOMBRE']), f'{periodo}.pdf')
+    if not os.path.exists(ruta):
+        return 'PDF no archivado en la carpeta del trabajador', 404
+    return send_file(ruta, mimetype='application/pdf')
+
+
+@app.route('/subir-remuneraciones', methods=['POST'])
+def subir_remuneraciones():
+    """Agrega/actualiza liquidaciones por (PERIODO, RUT) sin pisar las de otros meses."""
+    if not _acceso_remuneraciones():
+        return redirect(url_for('admin'))
+    archivo = request.files.get('csv')
+    if not archivo or not archivo.filename.endswith('.csv'):
+        return redirect(url_for('admin_remuneraciones_panel', error='Selecciona un archivo .csv'))
+    try:
+        nuevo = pd.read_csv(archivo, dtype=str, sep=';', encoding='utf-8-sig').fillna('')
+        nuevo.columns = nuevo.columns.str.strip()
+    except Exception as e:
+        return redirect(url_for('admin_remuneraciones_panel', error=f'No se pudo leer el CSV: {e}'))
+    faltan = [c for c in ('PERIODO', 'RUT', 'NOMBRE', 'TOTAL_HABERES') if c not in nuevo.columns]
+    if faltan:
+        return redirect(url_for('admin_remuneraciones_panel',
+                                error='Faltan columnas: ' + ', '.join(faltan)))
+    for col in REMUNERACIONES_COLUMNS:
+        if col not in nuevo.columns:
+            nuevo[col] = ''
+    nuevo = nuevo[REMUNERACIONES_COLUMNS]
+
+    actual = get_remuneraciones()
+    claves_nuevas = set(zip(nuevo['PERIODO'], nuevo['RUT']))
+    conservar = actual[[k not in claves_nuevas for k in zip(actual['PERIODO'], actual['RUT'])]]
+    combinado = pd.concat([conservar, nuevo], ignore_index=True).sort_values(['PERIODO', 'NOMBRE'])
+    try:
+        combinado.to_csv(REMUNERACIONES_PATH, sep=';', index=False, encoding='utf-8-sig')
+    except OSError as e:
+        return redirect(url_for('admin_remuneraciones_panel', error=f'No se pudo guardar: {e}'))
+    return redirect(url_for('admin_remuneraciones_panel', ok=f'{len(nuevo)} liquidaciones cargadas'))
+
+
 @app.route('/admin/cobranza')
 def admin_cobranza_panel():
     if _admin_requerido():
@@ -564,7 +685,7 @@ def _periodo_de_fecha(serie_fecha):
 
 
 def _calcular_eerr(unificado):
-    """Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible) por período,
+    """Ingresos (EEPP) − Costos (Caja Chica rendida + Combustible + Remuneraciones) por período,
     más Cortes/Repos/Visitas/Improcedencias del pipeline. Materiales queda
     fuera del costo hasta que tenga campo de precio (integración Defontana
     pendiente — ver placeholder en la plantilla)."""
@@ -589,13 +710,16 @@ def _calcular_eerr(unificado):
     else:
         comb_por_periodo = pd.Series(dtype=float)
 
+    rem_por_periodo = _remuneraciones_por_periodo()
+
     meses = []
     for _, fila in unificado.iterrows():
         p = int(fila['PERIODO'])
         ingreso = float(fila['INGRESO_EEPP'])
         costo_cc = float(cc_por_periodo.get(p, 0) or 0)
         costo_comb = float(comb_por_periodo.get(p, 0) or 0)
-        costos = costo_cc + costo_comb
+        costo_rem = float(rem_por_periodo.get(p, 0) or 0)
+        costos = costo_cc + costo_comb + costo_rem
         meses.append({
             'periodo': str(p),
             'cortes': int(fila['CORTES']),
@@ -605,6 +729,7 @@ def _calcular_eerr(unificado):
             'ingreso_eepp': ingreso,
             'costo_caja_chica': costo_cc,
             'costo_combustible': costo_comb,
+            'costo_remuneraciones': costo_rem,
             'costos_totales': costos,
             'resultado': ingreso - costos,
             'margen_pct': ((ingreso - costos) / ingreso * 100) if ingreso else None,
