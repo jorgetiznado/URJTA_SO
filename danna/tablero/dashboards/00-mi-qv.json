@@ -1,0 +1,114 @@
+{
+  "titulo": "Mi QV",
+  "descripcion": "El QlikView de siempre, ahora en el sistema y editable: visitas, cortes, reposiciones y escombros del mes, comparados con el mes anterior. Si quieres que Ant sea el mes anterior completo (como el QV original), cambia \"comparar\" a \"mes_completo\".",
+  "fuente": "gestion",
+  "periodo": "actual",
+  "comparar": "mismos_dias",
+  "bloques": [
+    {
+      "titulo": "Visitas por localidad",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Visita" },
+      "agrupar": "localidad",
+      "exito": { "columna": "pago", "valor": "Sí", "nombre": "Pagos" },
+      "meta": 0
+    },
+    {
+      "titulo": "Visitas por operador",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Visita" },
+      "agrupar": "operador",
+      "exito": { "columna": "pago", "valor": "Sí", "nombre": "Pagos" },
+      "meta": 0
+    },
+    {
+      "titulo": "Visitas histórico",
+      "grafico": "columnas",
+      "filtros": { "tipo": "Visita" },
+      "agrupar": "periodo",
+      "limite": 10
+    },
+    {
+      "titulo": "Cortes por localidad e instancia",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Corte" },
+      "agrupar": ["localidad", "instancia"],
+      "exito": { "columna": "pago", "valor": "Sí", "nombre": "Pago" },
+      "meta": 0
+    },
+    {
+      "titulo": "Cortes del mes por día",
+      "grafico": "columnas",
+      "filtros": { "tipo": "Corte" },
+      "agrupar": "dia",
+      "limite": 31,
+      "promedio": true
+    },
+    {
+      "titulo": "Cortes histórico",
+      "grafico": "columnas",
+      "filtros": { "tipo": "Corte" },
+      "agrupar": "periodo",
+      "limite": 10
+    },
+    {
+      "titulo": "Cortes por operador",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Corte" },
+      "agrupar": "operador",
+      "exito": { "columna": "pago", "valor": "Sí", "nombre": "Pago" },
+      "meta": 0,
+      "limite": 25
+    },
+    {
+      "titulo": "Simples (llave y retiro)",
+      "grafico": "barras",
+      "filtros": { "tipo": "Corte", "tipo_corte": "Simple" },
+      "agrupar": "operador"
+    },
+    {
+      "titulo": "Cañerías",
+      "grafico": "barras",
+      "filtros": { "tipo": "Corte", "tipo_corte": "Cañería" },
+      "agrupar": "operador"
+    },
+    {
+      "titulo": "Reposiciones por localidad",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Reposición" },
+      "agrupar": "localidad",
+      "exito": { "columna": "plazo", "valor": "A tiempo", "nombre": "< 4 h" },
+      "meta": 80
+    },
+    {
+      "titulo": "Reposiciones en menos de 4 horas",
+      "grafico": "semaforo",
+      "filtros": { "tipo": "Reposición" },
+      "agrupar": "localidad",
+      "exito": { "columna": "plazo", "valor": "A tiempo", "nombre": "Repuestas en menos de 4 h" },
+      "meta": 80
+    },
+    {
+      "titulo": "Reposiciones por operador",
+      "grafico": "comparativo",
+      "filtros": { "tipo": "Reposición" },
+      "agrupar": "operador",
+      "exito": { "columna": "plazo", "valor": "A tiempo", "nombre": "< 4 h" },
+      "meta": 80,
+      "limite": 25
+    },
+    {
+      "titulo": "Reposiciones histórico",
+      "grafico": "columnas",
+      "filtros": { "tipo": "Reposición" },
+      "agrupar": "periodo",
+      "limite": 10
+    },
+    {
+      "titulo": "Escombros (retiros)",
+      "grafico": "comparativo",
+      "filtros": { "escombro": "Sí" },
+      "agrupar": "localidad"
+    }
+  ]
+}
