@@ -24,8 +24,8 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 **Hicimos:** `CLAUDE.md` → "Quién está en la sesión": la cuenta dice Jorge pero por defecto está
 Danna; Jorge se identifica, y sus commits van con `git -c user.name=Jorge`. Las herramientas de
 Jorge que no están autorizadas para ella quedan nombradas. Lo mismo quedó en la memoria de Claude
-para esta carpeta. Pendiente: confirmar en una sesión nueva que Claude carga las habilidades de
-`danna/.claude/skills/` (prueba: `/prueba-danna`, después se borra).
+para esta carpeta. **Probado en una sesión nueva:** Claude carga solo las habilidades de
+`danna/.claude/skills/` (la de prueba respondió bien y después se borró).
 **Aprendí:** —
 **Commits:** este (`danna: las sesiones de Danna son clones de las de Jorge`).
 
