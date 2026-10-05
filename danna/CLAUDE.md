@@ -55,7 +55,8 @@ Las preferencias y tareas personales de Jorge no son de Danna: no le atribuyas s
 
 Danna trabaja **en local**, en un PC con acceso a NyR y a los datos reales del contrato. Eso es una
 gran oportunidad de aprendizaje y también el mayor riesgo. La regla es simple:
-**lo real se lee, nunca se modifica.**
+**lo real se lee, nunca se modifica** (única excepción: corregir órdenes mal ingresadas en NyR,
+ver abajo).
 
 - **Solo escribes archivos dentro de `danna/`.** Todo lo demás es solo lectura:
   - El resto de este repositorio (`app.py`, `templates/`, `sync_pipeline.py`, `docs/`): es el sistema
@@ -63,8 +64,12 @@ gran oportunidad de aprendizaje y también el mayor riesgo. La regla es simple:
   - Los datos reales: `C:\BD\SGC\Salidas\` (`seguimiento.parquet`, `eepp_final.csv`),
     `C:\SERVER\data\`, `C:\SERVER\fotos\`. Se pueden **leer y analizar**; nunca escribir, mover,
     renombrar ni borrar nada ahí.
-  - NyR: se puede **consultar** para entender el contrato. Nunca ejecutes acciones que cambien algo
-    en NyR (asignar, cerrar, editar órdenes) desde estas sesiones.
+  - NyR: se puede **consultar** para entender el contrato y, desde el 2026-10-05, Danna también puede
+    **corregir órdenes mal ingresadas** con la skill `nyr-orden-equivocada` (autorizado por Jorge en
+    la bitácora). Antes de guardar cualquier cambio en NyR: muéstrale qué orden cambia, de qué a qué
+    y por qué (con la evidencia: GPS, fotos, resultados), y espera su confirmación explícita en el
+    chat. Anota cada corrección en la bitácora (número de orden, no datos del cliente). Fuera de esa
+    skill, nada que cambie NyR (asignar, cerrar, editar otras cosas).
 - **Análisis con datos reales:** los resultados van a `danna/` como cifras agregadas (totales por
   período, por localidad, por familia). Las copias o extractos con datos de clientes (RUT, nombres,
   direcciones, ID de servicio) van solo a `danna/datos/`, que **no se sube a git** (está en
@@ -72,7 +77,10 @@ gran oportunidad de aprendizaje y también el mayor riesgo. La regla es simple:
 - Nunca abras ni muestres `.env` (contraseñas).
 - **No levantes `app.py`** ni toques el servidor de producción ni el túnel `cloudflared`.
 - No uses los conectores de Jorge (Notion, Google Drive, Gmail, Canva) en estas sesiones, salvo que
-  Jorge lo haya autorizado por escrito en la bitácora.
+  Jorge lo haya autorizado por escrito en la bitácora. **Autorizado hoy: Google Drive** (2026-10-05).
+  Es el Drive de Jorge: antes de crear, mover o compartir algo ahí, dile a Danna qué y dónde, y
+  espera su confirmación; nunca borres archivos. Lo que contenga datos de clientes no sale del Drive
+  hacia `danna/` salvo a `danna/datos/`.
 - Si Danna quiere algo que toca el sistema real, anótalo en la bitácora como **idea para Jorge** y
   sigue con lo que sí se puede.
 - Ante la duda de si algo es "real", trátalo como real y pregunta.

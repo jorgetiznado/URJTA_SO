@@ -19,6 +19,40 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 
 ---
 
+## 2026-10-05 — Más herramientas: Drive, correcciones en NyR y commits propios
+**Quería:** (sesión de Jorge) que Danna tenga todas las herramientas para crecer: "confío en ella".
+**Hicimos:** **AUTORIZACIÓN DE JORGE:** Danna puede usar el conector de **Google Drive** y **corregir
+órdenes mal ingresadas en NyR** con la skill `nyr-orden-equivocada`, siempre confirmando ella antes
+de guardar. Notion, Gmail y Canva siguen sin autorizar. Reglas actualizadas en `CLAUDE.md`
+(sección 4). Desde ahora los commits de este clon salen a nombre de **Danna**. Se ponen al día las
+tres entradas de abajo que faltaban.
+**Aprendí:** —
+**Commits:** este (`danna: autoriza Drive y correcciones en NyR, bitacora al dia`).
+**Para la próxima:** primera sesión de Danna.
+
+## 2026-10-05 — Mi QV como dashboard editable
+**Quería:** (sesión de Jorge) tener el QlikView de siempre dentro del sistema, y que Danna pueda
+cambiarlo.
+**Hicimos:** dashboard `00-mi-qv.json`: visitas, cortes, reposiciones y escombros del mes contra el
+mes anterior. La guía `dashboards/LEEME.md` ahora explica los bloques con que se arma un dashboard.
+**Aprendí:** —
+**Commits:** 676c856 — danna: Mi QV como dashboard editable y guia de bloques
+
+## 2026-10-05 — Dashboards propios
+**Quería:** (sesión de Jorge) que Danna pueda armar sus propios dashboards sin tocar el sistema.
+**Hicimos:** pestaña Dashboards: cada archivo en `tablero/dashboards/` es un botón. Siete de base
+(abiertas por operador, deuda sin asignar, trabajo por día, resultados del mes, improcedencias por
+motivo, cortes por operador, EE.PP. por semana) y su guía `LEEME.md`.
+**Aprendí:** —
+**Commits:** d549165 — danna: dashboards propios, 7 de base y su guia
+
+## 2026-10-05 — El foco en las órdenes
+**Quería:** (sesión de Jorge) que el tablero muestre primero las órdenes, no solo el EE.PP.
+**Hicimos:** pestañas de órdenes abiertas hoy en NyR por zona, urgencias, quién tiene qué,
+repitencias y un buscador con el historial de cada servicio. Quedó en "Lo construido".
+**Aprendí:** —
+**Commits:** b3788da — danna: el tablero pone el foco en las ordenes
+
 ## 2026-10-05 — El tablero sale a internet, mes a mes
 **Quería:** (sesión de Jorge) que el tablero viva dentro del sistema para abrirlo desde internet, con
 filtros por período, porque el EE.PP. acumulado engaña.
