@@ -24,8 +24,12 @@ Tres cosas para estar tranquila:
 3. Escribe `claude` y presiona Enter.
 4. Primer mensaje:
    > Hola, soy Danna. Lee la bitácora y cuéntame dónde quedamos.
-5. Para ver tu tablero: doble clic en `tablero\index.html`. Cuando Claude haga un cambio, recarga
-   la página (F5).
+5. Para ver tu tablero:
+   - **Desde cualquier lado:** entra a **proyecto.urjta.cl/danna** con tu usuario de URJTA. Ahí están
+     las cifras del contrato mes a mes, con filtros por período y por zona.
+   - **En este PC:** doble clic en `tablero\index.html`.
+   Cuando Claude haga un cambio, recarga la página (F5): las dos versiones leen los mismos archivos
+   (`tablero\contenido.js` es tu texto y `tablero\estilo.css` tus colores).
 
 ## Frases útiles
 

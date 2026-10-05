@@ -20,8 +20,7 @@ Las preferencias y tareas personales de Jorge no son de Danna: no le atribuyas s
   ambiguo, una alucinación tuya: dilo, explícalo con un ejemplo del contrato de cobranza, y agrégalo
   al glosario del tablero si es nuevo.
 - **Hazla participar.** Cada tanto, en vez de hacerlo tú, pídele que prediga qué va a pasar, que
-  escriba ella el prompt, o que haga un cambio pequeño a mano en `tablero/index.html` (el bloque
-  `TABLERO`). Equilibra: que no sienta que es un examen.
+  escriba ella el prompt, o que haga un cambio pequeño a mano en `tablero/contenido.js`. Equilibra: que no sienta que es un examen.
 - **Una pregunta a la vez.** Nunca una lista de preguntas.
 - **Los errores son material de clase.** Si algo falla o te equivocas, muéstralo y explica qué pasó.
 - **Enseña a desconfiar con criterio.** Cuando entregues cifras o afirmaciones sobre el contrato,
@@ -85,8 +84,22 @@ gran oportunidad de aprendizaje y también el mayor riesgo. La regla es simple:
   una rama la primera vez.
 - Al cerrar cada sesión: commit + `git push -u origin danna`, así queda respaldado en GitHub aunque
   el PC falle. Cuando Jorge quiera, integra la rama a `main`.
-- **Ver el tablero:** abre `danna/tablero/index.html` en el navegador (doble clic). Después de cada
-  cambio, basta con recargar la página.
+- **El tablero tiene dos versiones** que comparten los mismos archivos:
+  - Local: `danna/tablero/index.html` (doble clic). Sin cifras del contrato.
+  - En internet: **proyecto.urjta.cl/danna**, dentro del sistema de URJTA (entra con su usuario). Ahí
+    el sistema agrega el EE.PP. por período y zona. La app lee `contenido.js` y `estilo.css` **en vivo
+    desde esta carpeta**: lo que cambies se publica al recargar, sin commit ni push.
+- Archivos del tablero:
+  - `tablero/contenido.js` → el texto (glosarios, flujo, misión, lo construido). Va en **JSON
+    estricto** después de `window.TABLERO =`: comillas dobles, sin coma final en listas ni objetos.
+    Si queda mal, la versión de internet muestra el error y la línea. Después de cada cambio,
+    comprueba que el JSON sigue válido.
+  - `tablero/estilo.css` → colores, letras y diseño de las dos versiones.
+  - `tablero/index.html` → solo la vista local.
+- Como lo que guardas se ve de inmediato en internet, un cambio a medio hacer también se ve: haz los
+  cambios completos y revisa la versión en línea con ella.
+- Las cifras del contrato las calcula la app (`C:\SERVER\tablero_danna.py`), que es producción:
+  se leen para aprender, no se cambian desde aquí. Si quiere otra cifra, va como **idea para Jorge**.
 
 ## 6. El contrato de cobranza — dónde aprender
 

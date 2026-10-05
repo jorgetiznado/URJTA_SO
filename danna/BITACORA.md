@@ -19,6 +19,21 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 
 ---
 
+## 2026-10-05 — El tablero sale a internet, mes a mes
+**Quería:** (sesión de Jorge) que el tablero viva dentro del sistema para abrirlo desde internet, con
+filtros por período, porque el EE.PP. acumulado engaña.
+**Hicimos:** página **proyecto.urjta.cl/danna** dentro de la app (la ven Danna, Dirección y Gerencia).
+Muestra el EE.PP. de un mes a la vez, con filtro de período y zona: lo facturado, la comparación con
+los mismos días del mes anterior, el cierre proyectado, el detalle por tipo de trabajo y los últimos
+13 meses (cada mes por separado). Avisa que desde el 01-10 ADA solo genera cortes desde ~$50 mil.
+El tablero se separó en `contenido.js` (texto, en JSON), `estilo.css` (diseño) e `index.html`
+(vista local); la app lee los dos primeros en vivo desde esta carpeta. Danna entró al equipo de
+confianza (ve montos del EE.PP. en todo el sistema).
+**Aprendí:** —
+**Commits:** este (`danna: tablero en internet con el EE.PP. por período`); en el sistema, a790181.
+**Para la próxima:** abrir el tablero en internet, mirar distintos meses y zonas, y contar qué mes
+fue el más alto y por qué.
+
 ## 2026-10-05 — Espacio preparado en el PC
 **Quería:** (sesión de Jorge) dejar el espacio de Danna listo para trabajar en local.
 **Hicimos:** clon aparte del repo en `C:\Danna\URJTA_SO` (fuera de `C:\SERVER`, donde corre la app

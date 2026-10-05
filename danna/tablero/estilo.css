@@ -1,0 +1,104 @@
+/* ============================================================
+   DANNA: ESTE ARCHIVO ES EL DISEÑO DE TU TABLERO (colores, letras, espacios).
+   Lo usan las dos versiones: la local (index.html) y la de internet
+   (proyecto.urjta.cl/danna). Lo que cambies aquí se ve en las dos al recargar.
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+/* Diseño: cuaderno de terreno del contrato. Una columna de lectura, con bandas de datos a lo ancho.
+   Los colores vienen del agua (ADA) y de la pampa del norte. */
+:root {
+  --bg: #F3F6F7;
+  --surface: #FFFFFF;
+  --fg: #14232B;
+  --muted: #5A6B73;
+  --line: #D7E0E3;
+  --agua: #0B6E78;
+  --agua-suave: #DCEEF0;
+  --pampa: #A8621A;
+  --pampa-suave: #F6E7D6;
+  --ok: #2F7D4F;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1A20; --surface: #15252D; --fg: #E4ECEF; --muted: #93A6AE; --line: #26394299;
+    --agua: #5CC3CC; --agua-suave: #123C42; --pampa: #E3A15A; --pampa-suave: #3A2814; --ok: #6CC795;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1A20; --surface: #15252D; --fg: #E4ECEF; --muted: #93A6AE; --line: #26394299;
+  --agua: #5CC3CC; --agua-suave: #123C42; --pampa: #E3A15A; --pampa-suave: #3A2814; --ok: #6CC795;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--body); font-size: 1rem; line-height: 1.55;
+  padding-inline: 16px; padding-block: 0 4rem;
+}
+a { color: var(--agua); }
+.hoja { max-width: 60rem; margin-inline: auto; display: grid; gap: 3rem; }
+
+header { padding-block: 2.5rem 0; display: grid; gap: .75rem; border-bottom: 2px solid var(--fg); padding-bottom: 1.5rem; }
+.etiqueta { font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+h1 span { color: var(--agua); }
+.intro { max-width: 40rem; margin: 0; color: var(--muted); font-size: 1.05rem; }
+.meta { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+
+section { display: grid; gap: 1rem; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.bajada { margin: 0; color: var(--muted); max-width: 42rem; }
+.fuente { font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+
+/* Cifras del contrato */
+.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; }
+.cifra { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1.1rem 1.25rem; display: grid; gap: .25rem; min-width: 0; }
+.cifra b { font-family: var(--mono); font-weight: 500; font-size: clamp(1.4rem, 4vw, 1.9rem); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cifra small { color: var(--muted); }
+
+.familias { display: grid; gap: .6rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1.25rem; }
+.familia { display: grid; grid-template-columns: 7rem 1fr 6.5rem; gap: .75rem; align-items: center; font-size: .9rem; }
+.familia .barra { height: .7rem; background: var(--agua-suave); border-radius: 2px; overflow: hidden; }
+.familia .barra i { display: block; height: 100%; background: var(--agua); }
+.familia .monto { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+@media (max-width: 30rem) { .familia { grid-template-columns: 5.5rem 1fr; } .familia .monto { grid-column: 2; text-align: left; } }
+
+/* Flujo de una orden */
+.flujo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: .75rem; counter-reset: paso; }
+.flujo li { counter-increment: paso; border-top: 3px solid var(--agua); padding-top: .6rem; display: grid; gap: .2rem; align-content: start; }
+.flujo li::before { content: "Paso " counter(paso); font-family: var(--mono); font-size: .72rem; color: var(--agua); text-transform: uppercase; letter-spacing: .06em; }
+.flujo strong { font-family: var(--display); font-weight: 500; font-size: 1.1rem; }
+.flujo span { color: var(--muted); font-size: .9rem; }
+.aviso { background: var(--pampa-suave); color: var(--fg); border-left: 3px solid var(--pampa); padding: .75rem 1rem; border-radius: 0 4px 4px 0; font-size: .92rem; max-width: 46rem; margin: 0; }
+
+/* Glosarios */
+.dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 2rem; }
+dl { margin: 0; display: grid; gap: .9rem; }
+dl > div { display: grid; gap: .15rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); min-width: 0; }
+dt { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-weight: 600; }
+dd { margin: 0; color: var(--muted); font-size: .93rem; }
+.chip { font-family: var(--mono); font-size: .68rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; padding: .1rem .45rem; border-radius: 99px; border: 1px solid currentColor; }
+.chip.si { color: var(--ok); }
+.chip.no { color: var(--pampa); }
+h3 { font-family: var(--display); font-weight: 500; font-size: 1.15rem; margin: 0 0 .25rem; }
+
+/* Bitácora de construcciones */
+.linea { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.linea li { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; padding-block: .8rem; border-bottom: 1px solid var(--line); }
+.linea time { font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: .15rem; }
+.linea p { margin: 0; }
+.linea .quien { color: var(--muted); font-size: .85rem; }
+
+/* Misión */
+.mision { background: var(--fg); color: var(--bg); border-radius: 6px; padding: 1.5rem; display: grid; gap: .75rem; }
+.mision h2 { color: var(--bg); }
+.mision ol { margin: 0; padding-left: 1.25rem; display: grid; gap: .4rem; }
+.mision code { font-family: var(--mono); font-size: .85em; background: color-mix(in srgb, var(--bg) 14%, transparent); padding: .05rem .35rem; border-radius: 3px; }
+
+footer { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; }

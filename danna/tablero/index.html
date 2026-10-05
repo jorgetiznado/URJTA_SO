@@ -1,106 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tablero de Danna</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>
-/* Diseño: cuaderno de terreno del contrato. Una columna de lectura, con bandas de datos a lo ancho.
-   Los colores vienen del agua (ADA) y de la pampa del norte. */
-:root {
-  --bg: #F3F6F7;
-  --surface: #FFFFFF;
-  --fg: #14232B;
-  --muted: #5A6B73;
-  --line: #D7E0E3;
-  --agua: #0B6E78;
-  --agua-suave: #DCEEF0;
-  --pampa: #A8621A;
-  --pampa-suave: #F6E7D6;
-  --ok: #2F7D4F;
-  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0E1A20; --surface: #15252D; --fg: #E4ECEF; --muted: #93A6AE; --line: #26394299;
-    --agua: #5CC3CC; --agua-suave: #123C42; --pampa: #E3A15A; --pampa-suave: #3A2814; --ok: #6CC795;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0E1A20; --surface: #15252D; --fg: #E4ECEF; --muted: #93A6AE; --line: #26394299;
-  --agua: #5CC3CC; --agua-suave: #123C42; --pampa: #E3A15A; --pampa-suave: #3A2814; --ok: #6CC795;
-  color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--fg);
-  font-family: var(--body); font-size: 1rem; line-height: 1.55;
-  padding-inline: 16px; padding-block: 0 4rem;
-}
-.hoja { max-width: 60rem; margin-inline: auto; display: grid; gap: 3rem; }
-
-header { padding-block: 2.5rem 0; display: grid; gap: .75rem; border-bottom: 2px solid var(--fg); padding-bottom: 1.5rem; }
-.etiqueta { font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-h1 { font-family: var(--display); font-weight: 700; font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
-h1 span { color: var(--agua); }
-.intro { max-width: 40rem; margin: 0; color: var(--muted); font-size: 1.05rem; }
-.meta { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-family: var(--mono); font-size: .8rem; color: var(--muted); }
-
-section { display: grid; gap: 1rem; }
-h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
-.bajada { margin: 0; color: var(--muted); max-width: 42rem; }
-.fuente { font-family: var(--mono); font-size: .72rem; color: var(--muted); }
-
-/* Cifras del contrato */
-.cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; }
-.cifra { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1.1rem 1.25rem; display: grid; gap: .25rem; min-width: 0; }
-.cifra b { font-family: var(--mono); font-weight: 500; font-size: clamp(1.4rem, 4vw, 1.9rem); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.cifra small { color: var(--muted); }
-
-.familias { display: grid; gap: .6rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1.25rem; }
-.familia { display: grid; grid-template-columns: 7rem 1fr 6.5rem; gap: .75rem; align-items: center; font-size: .9rem; }
-.familia .barra { height: .7rem; background: var(--agua-suave); border-radius: 2px; overflow: hidden; }
-.familia .barra i { display: block; height: 100%; background: var(--agua); }
-.familia .monto { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
-@media (max-width: 30rem) { .familia { grid-template-columns: 5.5rem 1fr; } .familia .monto { grid-column: 2; text-align: left; } }
-
-/* Flujo de una orden */
-.flujo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: .75rem; counter-reset: paso; }
-.flujo li { counter-increment: paso; border-top: 3px solid var(--agua); padding-top: .6rem; display: grid; gap: .2rem; align-content: start; }
-.flujo li::before { content: "Paso " counter(paso); font-family: var(--mono); font-size: .72rem; color: var(--agua); text-transform: uppercase; letter-spacing: .06em; }
-.flujo strong { font-family: var(--display); font-weight: 500; font-size: 1.1rem; }
-.flujo span { color: var(--muted); font-size: .9rem; }
-.aviso { background: var(--pampa-suave); color: var(--fg); border-left: 3px solid var(--pampa); padding: .75rem 1rem; border-radius: 0 4px 4px 0; font-size: .92rem; max-width: 46rem; }
-
-/* Glosarios */
-.dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 2rem; }
-dl { margin: 0; display: grid; gap: .9rem; }
-dl > div { display: grid; gap: .15rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); min-width: 0; }
-dt { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-weight: 600; }
-dd { margin: 0; color: var(--muted); font-size: .93rem; }
-.chip { font-family: var(--mono); font-size: .68rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; padding: .1rem .45rem; border-radius: 99px; border: 1px solid currentColor; }
-.chip.si { color: var(--ok); }
-.chip.no { color: var(--pampa); }
-h3 { font-family: var(--display); font-weight: 500; font-size: 1.15rem; margin: 0 0 .25rem; }
-
-/* Bitácora de construcciones */
-.linea { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-.linea li { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem; padding-block: .8rem; border-bottom: 1px solid var(--line); }
-.linea time { font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: .15rem; }
-.linea p { margin: 0; }
-.linea .quien { color: var(--muted); font-size: .85rem; }
-
-/* Misión */
-.mision { background: var(--fg); color: var(--bg); border-radius: 6px; padding: 1.5rem; display: grid; gap: .75rem; }
-.mision h2 { color: var(--bg); }
-.mision ol { margin: 0; padding-left: 1.25rem; display: grid; gap: .4rem; }
-.mision code { font-family: var(--mono); font-size: .85em; background: color-mix(in srgb, var(--bg) 14%, transparent); padding: .05rem .35rem; border-radius: 3px; }
-
-footer { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; }
-</style>
-
+<!-- El diseño está en estilo.css y el contenido en contenido.js.
+     Esta página (la versión local) solo los junta. La versión de internet,
+     proyecto.urjta.cl/danna, usa esos mismos dos archivos y además muestra
+     las cifras del contrato por período. -->
+<link rel="stylesheet" href="estilo.css">
+<script src="contenido.js"></script>
+</head>
+<body>
 <main class="hoja">
   <header>
     <div class="etiqueta" id="eyebrow"></div>
@@ -110,11 +21,9 @@ footer { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--lin
   </header>
 
   <section aria-labelledby="h-cifras">
-    <h2 id="h-cifras">El contrato en una mirada</h2>
-    <p class="bajada">URJTA trabaja para ADA (Aguas del Altiplano) gestionando la cobranza en terreno: cortes, reposiciones, visitas y volantes. Cada orden ejecutada se paga a través del EEPP.</p>
-    <div class="cifras" id="cifras"></div>
-    <div class="familias" id="familias"></div>
-    <div class="fuente" id="fuente-cifras"></div>
+    <h2 id="h-cifras">El contrato mes a mes</h2>
+    <p class="bajada">Las cifras del contrato (el EE.PP. de cada mes, por zona y por tipo de trabajo) las calcula el sistema de URJTA con los datos reales. Se ven en la versión de internet.</p>
+    <p class="aviso">Ábrelo en <a href="https://proyecto.urjta.cl/danna">proyecto.urjta.cl/danna</a> (entras con tu usuario de siempre).</p>
   </section>
 
   <section aria-labelledby="h-flujo">
@@ -148,125 +57,40 @@ footer { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--lin
 
 <script>
 /* ============================================================
-   DANNA: ESTE BLOQUE ES TU CONTENIDO.
-   Todo lo que ves en el tablero sale de aquí (los "datos").
-   Más abajo está el código que lo dibuja (la "presentación").
-   Separar datos de presentación es una idea clave en software:
-   puedes cambiar el contenido sin tocar el diseño, y al revés.
-   ============================================================ */
-const TABLERO = {
-  dueña: "Danna",
-  version: "v0",
-  actualizado: "2026-10-05",
-  intro: "Mi espacio para entender el contrato de cobranza de URJTA y aprender a construir con IA. Lo armó Jorge como punto de partida; desde aquí lo hago mío.",
-
-  cifras: {
-    fuente: "Fuente: EEPP histórico completo, docs/ADMIN_COBRANZA_DISENO.md (julio 2026)",
-    destacadas: [
-      { valor: 1234549300, formato: "pesos", texto: "Ingreso histórico por EEPP" },
-      { valor: 144478, formato: "numero", texto: "Órdenes pagadas en total" },
-      { valor: 722, formato: "numero", texto: "Cortes pendientes en el período 202607" },
-    ],
-    familias: [
-      { nombre: "CyR", monto: 920000000 },
-      { nombre: "Gestión", monto: 161000000 },
-      { nombre: "Visita", monto: 109000000 },
-      { nombre: "Volante", monto: 43000000 },
-    ],
-  },
-
-  flujo: {
-    pasos: [
-      { titulo: "Pendiente", detalle: "ADA informa clientes con deuda. Llegan como órdenes de corte." },
-      { titulo: "Asignación", detalle: "Cada orden queda con un RESPONSABLE antes de salir a terreno." },
-      { titulo: "Visita", detalle: "El operador va al domicilio y registra con foto y GPS." },
-      { titulo: "Resultado", detalle: "Corte ejecutado, o improcedencia si no se pudo (casa cerrada, arranque no ubicado…)." },
-      { titulo: "Pago y reposición", detalle: "Si el cliente paga, se repone el servicio." },
-      { titulo: "EEPP", detalle: "A fin de mes, las órdenes ejecutadas se cobran a ADA." },
-    ],
-    aviso: "Este flujo lo escribió Claude leyendo la documentación del sistema. Puede tener errores. Tu primera tarea es revisarlo con Jorge y corregirlo: así se trabaja con IA.",
-  },
-
-  glosarioContrato: [
-    { palabra: "ADA", significado: "Aguas del Altiplano. El cliente de URJTA: la empresa sanitaria que encarga la cobranza.", entendida: false },
-    { palabra: "CyR", significado: "Corte y Reposición. La línea más grande del contrato.", entendida: false },
-    { palabra: "EEPP", significado: "Estado de Pago. Lo que URJTA le cobra a ADA cada mes por las órdenes ejecutadas. Es el ingreso.", entendida: false },
-    { palabra: "EERR", significado: "Estado de Resultados. Ingresos menos costos. Dice si el contrato gana o pierde plata.", entendida: false },
-    { palabra: "Improcedencia", significado: "Una orden que no se pudo ejecutar, con un motivo registrado.", entendida: false },
-    { palabra: "Período", significado: "El mes del contrato, escrito como AAAAMM. Por ejemplo 202607 es julio de 2026.", entendida: false },
-    { palabra: "Caja chica", significado: "Dinero para gastos menores de la operación. Se solicita, se aprueba y se rinde con boleta.", entendida: false },
-  ],
-
-  glosarioIA: [
-    { palabra: "Prompt", significado: "Lo que le escribes a la IA. Mientras más claro el pedido, mejor el resultado.", entendida: false },
-    { palabra: "Contexto", significado: "Todo lo que la IA tiene a la vista en una conversación: tus mensajes, archivos que leyó, instrucciones.", entendida: false },
-    { palabra: "Alucinación", significado: "Cuando la IA inventa algo con total seguridad. Por eso siempre se verifica contra la fuente.", entendida: false },
-    { palabra: "Commit", significado: "Una foto guardada del proyecto, con un mensaje que dice qué cambió. Permite volver atrás.", entendida: false },
-    { palabra: "Revert", significado: "Deshacer un cambio agregando un paso nuevo que lo revierte. La historia no se borra.", entendida: false },
-    { palabra: "CLAUDE.md", significado: "Un archivo con instrucciones que Claude lee antes de trabajar. Es como el reglamento del proyecto.", entendida: false },
-  ],
-
-  construido: [
-    { fecha: "2026-10-05", que: "Nace el tablero (versión 0): cifras del contrato, flujo de una orden, glosarios y bitácora.", quien: "Jorge con Claude" },
-  ],
-
-  mision: {
-    titulo: "Revisar el flujo y hacer tu primer cambio",
-    pasos: [
-      "Lee el flujo de una orden y anota qué no entiendes.",
-      "Pregúntale a Jorge si los pasos están bien y corrige lo que esté mal.",
-      "Pídele a Claude: <code>cambia el flujo con estas correcciones</code> y mira cómo lo hace.",
-      "Cámbiale el título al tablero por uno que te guste.",
-      "Al terminar, pídele a Claude que cierre la sesión en la bitácora.",
-    ],
-  },
-};
-
-/* ============================================================
-   PRESENTACIÓN: el código que convierte los datos en página.
+   PRESENTACIÓN: el código que convierte los datos (contenido.js) en página.
    No necesitas tocar esto para cambiar el contenido.
    ============================================================ */
+const TABLERO = window.TABLERO;
 const $ = (id) => document.getElementById(id);
-const pesos = (n) => "$" + n.toLocaleString("es-CL");
-const numero = (n) => n.toLocaleString("es-CL");
-const millones = (n) => "$" + Math.round(n / 1e6).toLocaleString("es-CL") + " M";
 
-$("eyebrow").textContent = "Contrato de Cobranza · URJTA";
-$("titulo").innerHTML = `Tablero de <span>${TABLERO.dueña}</span>`;
-$("intro").textContent = TABLERO.intro;
-$("meta").innerHTML = `<span>Versión ${TABLERO.version}</span><span>Actualizado ${TABLERO.actualizado}</span>`;
+if (!TABLERO) {
+  document.querySelector("main").innerHTML =
+    '<p class="aviso">No pude leer contenido.js. Puede tener un error de formato: pídele a Claude que lo revise.</p>';
+} else {
+  $("eyebrow").textContent = "Contrato de Cobranza · URJTA";
+  $("titulo").innerHTML = `Tablero de <span>${TABLERO["dueña"]}</span>`;
+  $("intro").textContent = TABLERO.intro;
+  $("meta").innerHTML = `<span>Versión ${TABLERO.version}</span><span>Actualizado ${TABLERO.actualizado}</span>`;
 
-$("cifras").innerHTML = TABLERO.cifras.destacadas.map((c) => `
-  <div class="cifra">
-    <b>${c.formato === "pesos" ? pesos(c.valor) : numero(c.valor)}</b>
-    <small>${c.texto}</small>
-  </div>`).join("");
+  $("flujo").innerHTML = TABLERO.flujo.pasos.map((p) => `<li><strong>${p.titulo}</strong><span>${p.detalle}</span></li>`).join("");
+  $("aviso-flujo").textContent = TABLERO.flujo.aviso;
 
-const mayor = Math.max(...TABLERO.cifras.familias.map((f) => f.monto));
-$("familias").innerHTML = TABLERO.cifras.familias.map((f) => `
-  <div class="familia">
-    <span>${f.nombre}</span>
-    <div class="barra" role="img" aria-label="${f.nombre}: ${millones(f.monto)}"><i style="width:${(f.monto / mayor) * 100}%"></i></div>
-    <span class="monto">${millones(f.monto)}</span>
-  </div>`).join("");
-$("fuente-cifras").textContent = TABLERO.cifras.fuente;
+  const glosario = (lista) => lista.map((g) => `
+    <div>
+      <dt>${g.palabra} <span class="chip ${g.entendida ? "si" : "no"}">${g.entendida ? "la entiendo" : "por aprender"}</span></dt>
+      <dd>${g.significado}</dd>
+    </div>`).join("");
+  $("glosario-contrato").innerHTML = glosario(TABLERO.glosarioContrato);
+  $("glosario-ia").innerHTML = glosario(TABLERO.glosarioIA);
 
-$("flujo").innerHTML = TABLERO.flujo.pasos.map((p) => `<li><strong>${p.titulo}</strong><span>${p.detalle}</span></li>`).join("");
-$("aviso-flujo").textContent = TABLERO.flujo.aviso;
+  $("construido").innerHTML = TABLERO.construido.map((c) => `
+    <li><time>${c.fecha}</time><div><p>${c.que}</p><p class="quien">${c.quien}</p></div></li>`).join("");
 
-const glosario = (lista) => lista.map((g) => `
-  <div>
-    <dt>${g.palabra} <span class="chip ${g.entendida ? "si" : "no"}">${g.entendida ? "la entiendo" : "por aprender"}</span></dt>
-    <dd>${g.significado}</dd>
-  </div>`).join("");
-$("glosario-contrato").innerHTML = glosario(TABLERO.glosarioContrato);
-$("glosario-ia").innerHTML = glosario(TABLERO.glosarioIA);
+  $("h-mision").textContent = TABLERO.mision.titulo;
+  $("pasos-mision").innerHTML = TABLERO.mision.pasos.map((p) => `<li>${p}</li>`).join("");
 
-$("construido").innerHTML = TABLERO.construido.map((c) => `
-  <li><time>${c.fecha}</time><div><p>${c.que}</p><p class="quien">${c.quien}</p></div></li>`).join("");
-
-$("h-mision").textContent = TABLERO.mision.titulo;
-$("pasos-mision").innerHTML = TABLERO.mision.pasos.map((p) => `<li>${p}</li>`).join("");
-
-$("pie").textContent = "Cada cambio a este tablero queda guardado en la historia del proyecto y anotado en danna/BITACORA.md. Nada se pierde.";
+  $("pie").textContent = "Cada cambio a este tablero queda guardado en la historia del proyecto y anotado en danna/BITACORA.md. Nada se pierde.";
+}
 </script>
+</body>
+</html>
