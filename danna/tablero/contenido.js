@@ -57,6 +57,7 @@ window.TABLERO = {
   ],
 
   "construido": [
+    { "fecha": "2026-10-05", "que": "El tablero pone el foco en las órdenes: lo abierto hoy en NyR de mi zona, lo más urgente, quién tiene qué, las órdenes con muchos intentos (repitencias) y un buscador con el historial completo de cada servicio.", "quien": "Jorge con Claude" },
     { "fecha": "2026-10-05", "que": "El tablero sale a internet (proyecto.urjta.cl/danna) con el EE.PP. por período y por zona, mes a mes en vez de acumulado. El contenido pasa a contenido.js y el diseño a estilo.css.", "quien": "Jorge con Claude" },
     { "fecha": "2026-10-05", "que": "Nace el tablero (versión 0): cifras del contrato, flujo de una orden, glosarios y bitácora.", "quien": "Jorge con Claude" }
   ],
