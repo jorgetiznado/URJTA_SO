@@ -21,7 +21,8 @@ Tres cosas para estar tranquila:
 1. Abre la app de Claude, pestaña **Code**, y empieza una sesión nueva en la carpeta
    `C:\Danna\URJTA_SO\danna`.
 2. Primer mensaje:
-   > Hola, soy Danna. Lee la bitácora y cuéntame dónde quedamos.
+   - **La primera vez:** "Hola, soy Danna, esta es mi primera vez."
+   - **Las siguientes:** "Hola, soy Danna. Lee la bitácora y cuéntame dónde quedamos."
 3. Para ver tu tablero:
    - **Desde cualquier lado:** entra a **proyecto.urjta.cl/danna** con tu usuario de URJTA. Ahí están
      las cifras del contrato mes a mes, con filtros por período y por zona, y tus dashboards.
