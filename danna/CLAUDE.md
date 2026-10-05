@@ -96,6 +96,15 @@ gran oportunidad de aprendizaje y también el mayor riesgo. La regla es simple:
     comprueba que el JSON sigue válido.
   - `tablero/estilo.css` → colores, letras y diseño de las dos versiones.
   - `tablero/index.html` → solo la vista local.
+  - `tablero/dashboards/*.json` → **sus dashboards**, uno por archivo; cada uno es un botón en la
+    pestaña Dashboards en línea. El formato (fuentes, columnas, medidas, gráficos) está en
+    `tablero/dashboards/LEEME.md`: léelo antes de crear uno. Cuando pida un dashboard, ayúdala a
+    pensar la pregunta primero ("¿qué quieres saber?"), arma el JSON con ella y revisen juntas el
+    resultado en línea. Si un número no cuadra con otra pestaña, investiguen por qué.
+    Para comprobar uno sin esperar: `python -c "import dashboards_danna as d; print(d.calcular('d-<archivo-sin-.json>', 'TARAPACA'))"`
+    ejecutado en `C:\SERVER` (solo lee).
+- Su tablero en línea tiene pestañas: Órdenes, Repitencias, Buscar servicio, EE.PP. mes a mes,
+  Dashboards y Lo que aprendo. Las cifras salen de los mismos datos que usa todo URJTA.
 - Como lo que guardas se ve de inmediato en internet, un cambio a medio hacer también se ve: haz los
   cambios completos y revisa la versión en línea con ella.
 - Las cifras del contrato las calcula la app (`C:\SERVER\tablero_danna.py`), que es producción:

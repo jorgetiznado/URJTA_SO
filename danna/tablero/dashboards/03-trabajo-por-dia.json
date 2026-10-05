@@ -1,0 +1,11 @@
+{
+  "titulo": "Trabajo por día",
+  "descripcion": "Cortes, reposiciones, gestiones de pago y volantes hechos cada día en terreno durante el último mes.",
+  "fuente": "visitas",
+  "ultimos_dias": 30,
+  "filtros": { "categoria": ["Corte", "Reposición", "Gestión de pago", "Visita (volante)"] },
+  "agrupar": "dia",
+  "medida": "cantidad",
+  "grafico": "columnas",
+  "limite": 30
+}

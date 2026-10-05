@@ -1,0 +1,9 @@
+{
+  "titulo": "Abiertas por operador",
+  "descripcion": "Cuántas órdenes abiertas tiene cada operador hoy. «Sin asignar» son las que todavía no tienen a nadie.",
+  "fuente": "abiertas",
+  "agrupar": "operador",
+  "medida": "cantidad",
+  "grafico": "barras",
+  "limite": 15
+}

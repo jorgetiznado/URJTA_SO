@@ -1,0 +1,10 @@
+{
+  "titulo": "EE.PP. por semana",
+  "descripcion": "Lo facturado cada semana (de lunes a domingo) en los últimos 4 meses. La semana en curso va hasta ayer.",
+  "fuente": "eepp",
+  "ultimos_dias": 120,
+  "agrupar": "semana",
+  "medida": "suma:monto",
+  "grafico": "columnas",
+  "limite": 18
+}

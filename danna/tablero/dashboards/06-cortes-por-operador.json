@@ -1,0 +1,11 @@
+{
+  "titulo": "Cortes por operador",
+  "descripcion": "Cortes efectivos de cada operador en los últimos 30 días.",
+  "fuente": "visitas",
+  "ultimos_dias": 30,
+  "filtros": { "categoria": "Corte" },
+  "agrupar": "operador",
+  "medida": "cantidad",
+  "grafico": "barras",
+  "limite": 15
+}

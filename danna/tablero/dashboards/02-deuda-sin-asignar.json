@@ -1,0 +1,10 @@
+{
+  "titulo": "Deuda sin asignar",
+  "descripcion": "Cuánta deuda espera en órdenes de corte que nadie tiene asignadas, por localidad. Sirve para decidir dónde mandar gente primero.",
+  "fuente": "abiertas",
+  "filtros": { "clase": "Corte", "estado": "Sin asignar" },
+  "agrupar": "localidad",
+  "medida": "suma:deuda",
+  "grafico": "barras",
+  "limite": 10
+}

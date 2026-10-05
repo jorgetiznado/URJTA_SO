@@ -1,0 +1,9 @@
+{
+  "titulo": "Resultados del mes",
+  "descripcion": "Qué pasó con las visitas de los últimos 30 días: cortes, pagos, volantes o improcedencias.",
+  "fuente": "visitas",
+  "ultimos_dias": 30,
+  "agrupar": "categoria",
+  "medida": "cantidad",
+  "grafico": "tabla"
+}

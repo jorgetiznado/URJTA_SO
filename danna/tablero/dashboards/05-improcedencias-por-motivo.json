@@ -1,0 +1,11 @@
+{
+  "titulo": "Improcedencias por motivo",
+  "descripcion": "Por qué no se pudo cortar en los últimos 30 días. Las propias (casa cerrada, cliente se niega…) son las que el equipo puede mejorar.",
+  "fuente": "visitas",
+  "ultimos_dias": 30,
+  "filtros": { "categoria": "Improcedencia" },
+  "agrupar": "resultado",
+  "medida": "cantidad",
+  "grafico": "barras",
+  "limite": 12
+}
