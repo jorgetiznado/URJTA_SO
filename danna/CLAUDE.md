@@ -111,7 +111,7 @@ ver abajo).
     y por qué (con la evidencia: GPS, fotos, resultados), y espera su confirmación explícita en el
     chat. Anota cada corrección como caso en `CASOS.md` (sin datos del cliente; el detalle va a
     `danna/datos/casos/`). Fuera de esa skill, nada que cambie NyR (asignar, cerrar, editar otras
-    cosas).
+    cosas). También puede cargar repos manuales con la habilidad `cargar-repo-manual` (autorizado por Jorge, 2026-10-05), que escribe en la cola de Taypi y en NyR.
 - **Análisis con datos reales:** los resultados van a `danna/` como cifras agregadas (totales por
   período, por localidad, por familia). Las copias o extractos con datos de clientes (RUT, nombres,
   direcciones, ID de servicio) van solo a `danna/datos/`, que **no se sube a git** (está en

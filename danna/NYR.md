@@ -43,7 +43,7 @@ con destino en `danna/datos/nyr/` (no se sube a git):
 - `resultados_nyr.py` **sin `--destino`** reemplaza los CSV del mes que lee el pipeline. Nunca.
 - `bandeja_nyr.py` no se corre: lo hace la tarea cada 30 min. Se lee `bandeja_nyr.csv`.
 - **Estos sí cambian NyR y no se usan** en las sesiones de Danna: `asignar_operador`,
-  `reasignar_lote`, `reasignar_masivo`, `cerrar_lote`, `vaciar_pda`, `cargar_manual`,
+  `reasignar_lote`, `reasignar_masivo`, `cerrar_lote`, `vaciar_pda`,
   `importar_resultados`, `Programa Cierre`. La única excepción es `cerrar_orden.py` dentro de la
   habilidad de orden equivocada, y el guardado lo corre Danna en su terminal.
 - Los scripts sacan la clave de `automatizacion\config_*.json`. Esos archivos **no se abren**

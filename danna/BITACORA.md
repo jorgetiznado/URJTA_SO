@@ -19,6 +19,20 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 
 ---
 
+## 2026-10-05 — Primera habilidad: cargar repos manuales
+**Quería:** (sesión de Jorge) en su primera sesión, Danna pidió subir una reposición manual y Claude
+la llenó de preguntas sobre un proceso que ella hace todos los días. "Quizás demasiado tutorial";
+"no debe ser tan aparte, sobre todo en NyR: ella es la experta".
+**Hicimos:** en NyR, modo trabajo: solo se piden los datos que faltan, todos juntos. **AUTORIZACIÓN
+DE JORGE:** Danna puede cargar repos manuales con la habilidad `cargar-repo-manual`, que registra la
+repo en la cola de Taypi y la carga en NyR con `cargar_manual.py` (ensayo primero; con su sí, la
+carga). El clasificador de Claude no dejó que Claude escribiera esa habilidad, porque abre escritura
+en producción y en NyR, así que la escribió Jorge: es la decisión de él. `cargar_manual` sale de la
+lista de scripts prohibidos en `NYR.md`.
+**Aprendí:** —
+**Commits:** este (`danna: habilidad cargar-repo-manual, escrita y autorizada por Jorge`).
+**Para la próxima:** que Danna la use con su caso pendiente, en una sesión nueva.
+
 ## 2026-10-05 — Las sesiones de Danna son clones de las de Jorge
 **Quería:** (sesión de Jorge) que Danna trabaje en sesiones como esta, con la misma configuración.
 **Hicimos:** `CLAUDE.md` → "Quién está en la sesión": la cuenta dice Jorge pero por defecto está
