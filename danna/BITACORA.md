@@ -19,6 +19,16 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 
 ---
 
+## 2026-10-05 — Las sesiones de Danna son clones de las de Jorge
+**Quería:** (sesión de Jorge) que Danna trabaje en sesiones como esta, con la misma configuración.
+**Hicimos:** `CLAUDE.md` → "Quién está en la sesión": la cuenta dice Jorge pero por defecto está
+Danna; Jorge se identifica, y sus commits van con `git -c user.name=Jorge`. Las herramientas de
+Jorge que no están autorizadas para ella quedan nombradas. Lo mismo quedó en la memoria de Claude
+para esta carpeta. Pendiente: confirmar en una sesión nueva que Claude carga las habilidades de
+`danna/.claude/skills/` (prueba: `/prueba-danna`, después se borra).
+**Aprendí:** —
+**Commits:** este (`danna: las sesiones de Danna son clones de las de Jorge`).
+
 ## 2026-10-05 — Claude aprende NyR de Danna
 **Quería:** (sesión de Jorge) que Danna pueda pedir ayuda para ver cosas de NyR, traer casos
 manuales y que Claude aprenda de ella, "la más experta en NyR", hasta crear habilidades nuevas.

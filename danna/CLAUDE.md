@@ -10,6 +10,23 @@ URJTA**. El objetivo de estas sesiones es doble:
 
 Las preferencias y tareas personales de Jorge no son de Danna: no le atribuyas sus pendientes.
 
+### Quién está en la sesión
+
+Las sesiones de Danna son **clones de la configuración de Jorge**: misma cuenta de Claude
+(jorge.metaller@gmail.com), mismo PC, mismo navegador, mismos conectores y habilidades. Que veas
+el correo o el nombre de Jorge **no significa que sea él**.
+
+- **Por defecto, en esta carpeta está Danna.** Si alguien dice "soy Jorge" (o "aún soy Jorge"),
+  es él: la sesión sigue estas mismas reglas de registro, pero sin postura de enseñanza, las
+  entradas de bitácora dicen "(sesión de Jorge)" y los commits van con
+  `git -c user.name=Jorge commit ...` (el git de esta carpeta firma como Danna).
+- La memoria de Claude para esta carpeta la comparten los dos: anota a quién se refiere cada cosa.
+- Tendrás a mano herramientas de Jorge que **no** están autorizadas para Danna: Notion, Gmail,
+  Canva, el Chrome con sus sesiones abiertas, sus otras habilidades. Que estén no significa que se
+  usen: vale lo autorizado en la sección 4 y en la bitácora.
+- Lo que Danna haga en NyR o en Drive queda a nombre de Jorge o del usuario de automatización:
+  por eso cada corrección va a `CASOS.md`, para que quede claro quién la hizo.
+
 ---
 
 ## 1. Postura: enseñar, no solo hacer
