@@ -68,13 +68,14 @@ ver abajo).
     **corregir órdenes mal ingresadas** con la skill `nyr-orden-equivocada` (autorizado por Jorge en
     la bitácora). Antes de guardar cualquier cambio en NyR: muéstrale qué orden cambia, de qué a qué
     y por qué (con la evidencia: GPS, fotos, resultados), y espera su confirmación explícita en el
-    chat. Anota cada corrección en la bitácora (número de orden, no datos del cliente). Fuera de esa
-    skill, nada que cambie NyR (asignar, cerrar, editar otras cosas).
+    chat. Anota cada corrección como caso en `CASOS.md` (sin datos del cliente; el detalle va a
+    `danna/datos/casos/`). Fuera de esa skill, nada que cambie NyR (asignar, cerrar, editar otras
+    cosas).
 - **Análisis con datos reales:** los resultados van a `danna/` como cifras agregadas (totales por
   período, por localidad, por familia). Las copias o extractos con datos de clientes (RUT, nombres,
   direcciones, ID de servicio) van solo a `danna/datos/`, que **no se sube a git** (está en
   `.gitignore`). Nunca pongas datos de un cliente individual en el tablero ni en un commit.
-- Nunca abras ni muestres `.env` (contraseñas).
+- Nunca abras ni muestres `.env` ni `automatizacion\config_*.json` (contraseñas).
 - **No levantes `app.py`** ni toques el servidor de producción ni el túnel `cloudflared`.
 - No uses los conectores de Jorge (Notion, Google Drive, Gmail, Canva) en estas sesiones, salvo que
   Jorge lo haya autorizado por escrito en la bitácora. **Autorizado hoy: Google Drive** (2026-10-05).
@@ -124,3 +125,40 @@ ver abajo).
 - `docs/PLAN_FORMALIZACION.md` — cómo está construido el sistema y hacia dónde va.
 - `README.md` — roles de usuario y módulos.
 - `app.py`, función `_calcular_eerr` — cómo se calcula ingreso − costo = resultado.
+
+## 7. NyR: aquí la experta es Danna
+
+En NyR la relación se invierte: **Danna sabe más que tú.** Tú pones la lectura de datos, los
+scripts y la memoria; ella pone cómo funciona de verdad la operación. Jorge quiere que aprendas de
+ella, y que ella vea que puede enseñarle a una IA.
+
+- **Cuando pida ver algo de NyR**, sigue `NYR.md`: primero lo que ya está en disco, después los
+  scripts de solo lectura (**siempre** con destino en `danna/datos/nyr/`), y si no alcanza, que ella
+  te muestre la pantalla. Di de qué archivo sale cada cifra y a qué hora se bajó.
+- **Cuando traiga un caso** (captura, WhatsApp, Excel, "mira esta orden"): guarda lo que traiga en
+  `danna/datos/casos/AAAA-MM-DD_tema/`, revísenlo juntas y al cerrar anótalo en `CASOS.md` (sin
+  datos del cliente).
+- **Pregúntale antes de suponer.** Si no sabes qué significa un estado, un código o por qué un
+  operador hace algo, pregúntale a ella antes de buscar en el código. Lo que te enseñe va a
+  `NYR.md` → "Lo que Danna enseña", con sus palabras, y le muestras cómo quedó.
+- **Si ella contradice al sistema**, no le des la razón al sistema por defecto: revisen juntas el
+  dato. Si el sistema está mal, va como **idea para Jorge**.
+
+### Habilidades nuevas (skills)
+
+Una **habilidad** es un archivo de instrucciones que Claude carga solo cuando aparece cierto tipo
+de tarea: así se aprende un procedimiento una vez y se repite bien siempre. Ejemplo que ya existe:
+`nyr-orden-equivocada` (de Jorge, en `C:\Users\jorge\.claude\skills\`).
+
+- **Cuándo proponer una:** cuando un tipo de caso aparece por segunda vez en `CASOS.md`, o cuando
+  ella diga "esto siempre se hace así". Propónselo y explícale qué es; la decisión es de ella.
+- **Cómo se escribe:** juntas, con sus palabras y un caso real de referencia (anonimizado). Dónde va:
+  `danna/.claude/skills/<nombre-en-minusculas>/SKILL.md`, con el encabezado `name` y `description`
+  (la descripción dice *cuándo* usarla: frases que ella diría). Puedes apoyarte en la habilidad
+  `skill-creator`. Si la habilidad necesita un script nuevo, el script también va dentro de esa
+  carpeta y solo lee.
+- **Pruébenla** con un caso real antes de darla por buena, y ajústenla con lo que falle.
+- Commit `danna: nueva habilidad <nombre>`, entrada en `construido` y la palabra en el glosario si
+  es nueva para ella.
+- Si una habilidad sirve para todo URJTA, anótala como **idea para Jorge** (él la puede pasar a sus
+  habilidades).

@@ -53,10 +53,12 @@ window.TABLERO = {
     { "palabra": "Commit", "significado": "Una foto guardada del proyecto, con un mensaje que dice qué cambió. Permite volver atrás.", "entendida": false },
     { "palabra": "Revert", "significado": "Deshacer un cambio agregando un paso nuevo que lo revierte. La historia no se borra.", "entendida": false },
     { "palabra": "CLAUDE.md", "significado": "Un archivo con instrucciones que Claude lee antes de trabajar. Es como el reglamento del proyecto.", "entendida": false },
-    { "palabra": "JSON", "significado": "Un formato para escribir datos que las máquinas leen sin dudas: nombres entre comillas, listas entre [ ] y objetos entre { }.", "entendida": false }
+    { "palabra": "JSON", "significado": "Un formato para escribir datos que las máquinas leen sin dudas: nombres entre comillas, listas entre [ ] y objetos entre { }.", "entendida": false },
+    { "palabra": "Habilidad (skill)", "significado": "Un archivo de instrucciones que Claude carga solo cuando aparece cierto tipo de tarea. Se le enseña un procedimiento una vez y lo repite bien siempre. Por ejemplo: corregir una orden mal ingresada en NyR.", "entendida": false }
   ],
 
   "construido": [
+    { "fecha": "2026-10-05", "que": "Claude aprende NyR de mí: una guía para mirar NyR sin riesgo, un registro de casos y un lugar para mis propias habilidades (skills). Además puedo usar Google Drive y corregir órdenes mal ingresadas.", "quien": "Jorge con Claude" },
     { "fecha": "2026-10-05", "que": "El tablero pone el foco en las órdenes: lo abierto hoy en NyR de mi zona, lo más urgente, quién tiene qué, las órdenes con muchos intentos (repitencias) y un buscador con el historial completo de cada servicio.", "quien": "Jorge con Claude" },
     { "fecha": "2026-10-05", "que": "El tablero sale a internet (proyecto.urjta.cl/danna) con el EE.PP. por período y por zona, mes a mes en vez de acumulado. El contenido pasa a contenido.js y el diseño a estilo.css.", "quien": "Jorge con Claude" },
     { "fecha": "2026-10-05", "que": "Nace el tablero (versión 0): cifras del contrato, flujo de una orden, glosarios y bitácora.", "quien": "Jorge con Claude" }

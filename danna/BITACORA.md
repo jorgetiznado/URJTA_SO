@@ -19,6 +19,19 @@ Un punto de guardado se anota así: `PUNTO DE GUARDADO — <hash> — antes de <
 
 ---
 
+## 2026-10-05 — Claude aprende NyR de Danna
+**Quería:** (sesión de Jorge) que Danna pueda pedir ayuda para ver cosas de NyR, traer casos
+manuales y que Claude aprenda de ella, "la más experta en NyR", hasta crear habilidades nuevas.
+**Hicimos:** `NYR.md`: cómo mirar NyR (primero lo que ya está en disco, después los scripts de
+solo lectura con destino en `danna/datos/nyr/`, y qué scripts nunca usar) y una sección "Lo que
+Danna enseña". `CASOS.md`: registro de casos sin datos de clientes; el detalle va a
+`danna/datos/casos/`. `CLAUDE.md` sección 7: en NyR la experta es ella, y cómo se crean sus
+habilidades en `danna/.claude/skills/`. El `.gitignore` del repo ahora versiona esas habilidades
+(el resto de `.claude/` sigue fuera). "Habilidad (skill)" en el glosario.
+**Aprendí:** —
+**Commits:** este (`danna: Claude aprende NyR de Danna, casos y habilidades propias`).
+**Para la próxima:** que Danna traiga su primer caso de NyR y le enseñe a Claude una pantalla.
+
 ## 2026-10-05 — Más herramientas: Drive, correcciones en NyR y commits propios
 **Quería:** (sesión de Jorge) que Danna tenga todas las herramientas para crecer: "confío en ella".
 **Hicimos:** **AUTORIZACIÓN DE JORGE:** Danna puede usar el conector de **Google Drive** y **corregir

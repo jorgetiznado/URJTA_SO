@@ -17,6 +17,10 @@ __pycache__/
 
 # Configuración local del asistente (no aporta fuera de esta máquina)
 .claude/
+# ...salvo las habilidades de Danna, que se versionan como el resto de su trabajo
+!danna/.claude/
+danna/.claude/*
+!danna/.claude/skills/
 
 # Extractos de datos reales que Danna use para aprender (contienen datos de clientes)
 danna/datos/
